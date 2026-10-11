@@ -42,12 +42,17 @@ little or nothing, and that is the site, not the plugin.
                          thread loop. Now: 3 pages in parallel, magnet
                          resolved on download. This is the RARBG successor;
                          the original shut down in 2023.
-  ✔  Rutor            — community plugin (imDMG), Russian tracker. 260 results
   ✔  snowfl            — community plugin (LightDestory). ADDED Sept 2026.
                          136 results, magnet links. A meta-search: it rate
                          limits under concurrent queries and returns zero for
                          a while, which looks exactly like a dead engine.
                          Run it on its own before concluding anything.
+  ✔  Knaben           — CUSTOM plugin (knaben.py). ADDED Oct 2026. An
+                         English index that collects The Pirate Bay, 1337x,
+                         Nyaa, YTS and others, through its JSON API
+                         (api.knaben.org/v1): 176-565 results in 2-3 s, magnet
+                         links, all categories. RuTracker's Russian-language
+                         results are filtered out (often a third of the hits).
   ✔  LimeTorrents     — PATCHED (domain .lol -> .fun). 160 results
   ✔  The Pirate Bay   — official repo, JSON API. 100 results
   ✔  FitGirl Repacks  — CUSTOM plugin, WP REST API. 94 results
@@ -82,7 +87,7 @@ little or nothing, and that is the site, not the plugin.
 
   Note on ebooks/epub: No public torrent sites specialise in epub only.
   For ebooks, use the existing plugins with their 'books' category:
-  The Pirate Bay, 1337x, and Rutor all index ebook torrents.
+  The Pirate Bay, 1337x and Knaben all index ebook torrents.
   Academic Torrents covers research papers / textbooks.
 
   Note on DNS filtering: a filtering resolver (NextDNS, Pi-hole, an ISP block,
@@ -105,6 +110,10 @@ little or nothing, and that is the site, not the plugin.
                          you paste a free key from
                          https://www.omdbapi.com/apikey.aspx into the plugin,
                          which makes it use the imdb_id path instead.
+  ✘  Rutor            — REMOVED Oct 2026: it works (260 results), but it is
+                         a Russian tracker with Russian-language releases,
+                         and this installer ships English sites only.
+                         Re-running the installer deletes an installed copy.
   ✘  TorrentGalaxy    — REMOVED Oct 2026 as too slow: ~87 s per search
                          (1249 rows for "batman"), the slowest engine by far,
                          and it holds the Search tab open the whole time. It
@@ -154,6 +163,29 @@ little or nothing, and that is the site, not the plugin.
                        — alive on public DNS but answered 0.0.0.0 on the
                          machine this was tested from, so they could not be
                          verified here. Try them if your resolver allows.
+
+  Rechecked October 2026 for English sites and still NOT added:
+  ✘  YourBittorrent, UIndex, BT4G — 403 / Cloudflare challenge.
+  ✘  CloudTorrents    — its API answers Cloudflare 526 (origin down).
+  ✘  AnimeTosho       — feed.animetosho.org did not answer within 11 s.
+  ✘  torrentdownloads.pro — still a flat ~20 s per request.
+  ✘  TorrentClaw      — its API answers "Forbidden" without an API key.
+  ✘  LinuxTracker     — site alive but redesigned; the 2017 plugin finds
+                         nothing on it.
+  ✘  EZTV (eztvx, DrPurp v3.20) — the same OMDb-key problem as above; its
+                         search page is now Cloudflare-challenged too, as are
+                         the eztv.re / .wf / .tf / .yt mirrors.
+  ✘  ext.to, rargb.to, TorrentFunk, Tokyo Toshokan (the site, not just the
+     plugin), TorrentKitty, Demonoid (dnoid.to)
+                       — all answer 403 with a Cloudflare challenge.
+  ✘  BitSearch        — bitsearch.to now redirects to bitsearch.eu, whose
+                         page Microsoft Defender flags as
+                         Trojan:HTML/Redirector (malicious redirects). Never
+                         re-add it. torlock.cc's parked page is flagged too.
+  ✘  torrentgalaxy.one — fast, but a reskin of TheRARBG: same database, the
+                         same 39/39 post ids for "ubuntu". Adds only duplicates.
+  ✘  isoHunt (isohunt.nz), iDope, magnetdl.homes — no real results (empty,
+                         script-rendered or a stub page).
 
   ✘  RuTracker        — not added: requires login credentials
   ✘  Myanonamouse (MAM) — not added (private tracker, invite-only)
@@ -246,11 +278,6 @@ REMOTE_PLUGINS: Dict[str, str] = {
         "https://raw.githubusercontent.com/kli885/qBittorent-SubsPlease-Search-Plugin"
         "/main/subsplease.py"
     ),
-    # General additional
-    "rutor.py": (
-        "https://raw.githubusercontent.com/imDMG/qBt_SE"
-        "/master/engines/rutor.py"
-    ),
 }
 
 # Plugins that live alongside this script (custom-written or patched)
@@ -275,6 +302,7 @@ LOCAL_PLUGINS = [
     SCRIPT_DIR / "qbt_plugins" / "therarbg.py",  # PATCHED: site layout change, bounded paging
     SCRIPT_DIR / "qbt_plugins" / "audiobookbay.py",  # PATCHED: live mirror, timeouts, bounded paging
     SCRIPT_DIR / "qbt_plugins" / "leetx.py",  # CUSTOM: 1337x via a mirror without the Cloudflare challenge
+    SCRIPT_DIR / "qbt_plugins" / "knaben.py",  # CUSTOM: Knaben's JSON API (many sites at once)
 ]
 
 # Engines an earlier version of this installer put in place that have since
@@ -298,6 +326,7 @@ RETIRED_PLUGINS = [
     "torrentproject.py",
     "eztv.py",  # official HTML scraper: eztvx.to is Cloudflare-challenged
     "tokyotoshokan.py",
+    "rutor.py",  # works, but Russian-language: the installer ships English sites only
 ]
 
 
@@ -1192,7 +1221,7 @@ def install_plugin_dependencies(engines_dir: Path, dry_run: bool) -> None:
 
 # Written next to the plugins after a successful install. qBittorrent only
 # loads *.py from engines/, and plugins already keep their own .json there
-# (jackett.json, rutor.json), so this file is invisible to the Search tab.
+# (jackett.json, for one), so this file is invisible to the Search tab.
 # Installs made before 1.2.0 have no record.
 INSTALL_RECORD = "qbt-plugin-installer.json"
 

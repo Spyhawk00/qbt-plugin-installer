@@ -82,7 +82,7 @@ PAD = 22                  # outer margin
 ENGINE_NAMES = {
     "piratebay": "The Pirate Bay", "leetx": "1337x", "therarbg": "TheRARBG",
     "limetorrents": "LimeTorrents", "torrentscsv": "Torrents-CSV", "snowfl": "snowfl",
-    "rutor": "Rutor", "yts": "YTS (movies)", "nyaasi": "Nyaa (anime)",
+    "knaben": "Knaben", "yts": "YTS (movies)", "nyaasi": "Nyaa (anime)",
     "subsplease": "SubsPlease (anime)", "fitgirl_repacks": "FitGirl (games)",
     "audiobookbay": "AudioBook Bay", "academictorrents": "Academic Torrents",
     "jackett": "Jackett",

@@ -44,6 +44,9 @@ are assigned after the fact so the history reads in order.
   `nova3/engines/qbt-plugin-installer.json`. Re-running says which version it
   is upgrading from, and refuses to downgrade a newer install unless
   `--force`.
+- **Knaben** (`knaben.py`), an English index that searches The Pirate Bay,
+  1337x, Nyaa, YTS and others at once through its API: hundreds of results
+  in 2–3 seconds, in every category.
 - **1337x** (`leetx.py`), through the www.1337xx.to mirror. Every 1337x.to /
   1337x.st / x1337x.* domain is behind a Cloudflare challenge.
 - **Upgrading in place.** Re-running brings an older install fully up to date
@@ -62,6 +65,8 @@ are assigned after the fact so the history reads in order.
 
 ### Removed
 - **TorLock**: every domain is behind a Cloudflare challenge.
+- **RuTor**: a Russian tracker with Russian-language releases. The installer
+  now ships English sites only.
 - **TorrentGalaxy** (~87 s per search) and **TorrentDownload** (~24 s): too slow.
 - Existing copies of these, plus EZTV, Tokyo Toshokan and the engines removed
   in 1.0.0/1.1.0, are deleted when the installer is re-run.

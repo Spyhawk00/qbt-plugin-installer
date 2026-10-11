@@ -1,7 +1,7 @@
 # qBittorrent Search Plugin Installer
 
 Adds a batch of working **search engines** to qBittorrent's *Search* tab —
-The Pirate Bay, 1337x, TheRARBG, snowfl, YTS, Nyaa, SubsPlease, RuTor,
+The Pirate Bay, 1337x, Knaben, TheRARBG, snowfl, YTS, Nyaa, SubsPlease,
 LimeTorrents, Torrents-CSV, Academic Torrents, audiobooks and game repacks —
 and sets up everything they need. One download, one double-click.
 
