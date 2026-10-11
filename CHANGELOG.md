@@ -47,11 +47,14 @@ are assigned after the fact so the history reads in order.
 - **Knaben** (`knaben.py`), an English index that searches The Pirate Bay,
   1337x, Nyaa, YTS and others at once through its API: hundreds of results
   in 2–3 seconds, in every category.
-- **Update notices.** When a newer version is released, searches in
-  qBittorrent show one "⬆ Update available" result; double-clicking it opens
-  the download page. GitHub is asked at most once a day, and nothing is
-  updated automatically. The installer's own window also links to a newer
-  version.
+- **Update notices with one-click install.** When a newer version is
+  released, searches in qBittorrent show one "⬆ Update available" result at
+  the top. Double-clicking it downloads the new installer from this
+  project's GitHub release, checks it against the SHA-256 checksum GitHub
+  publishes, and opens it; the installer still waits for Install. If
+  anything goes wrong it opens the download page instead, and the download
+  is deleted afterwards. GitHub is asked at most once a day. The installer's
+  own window also links to a newer version.
 - **1337x** (`leetx.py`), through the www.1337xx.to mirror. Every 1337x.to /
   1337x.st / x1337x.* domain is behind a Cloudflare challenge.
 - **Upgrading in place.** Re-running brings an older install fully up to date
