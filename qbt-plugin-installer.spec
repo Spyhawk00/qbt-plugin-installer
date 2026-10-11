@@ -78,8 +78,12 @@ a = Analysis(
     optimize=2,  # strip docstrings and asserts from the bundled bytecode
 )
 a.datas = [entry for entry in a.datas if keep_data(entry[0])]
+# Also the Universal C Runtime (ucrtbase.dll, api-ms-win-*.dll, ~0.9 MB):
+# it is part of Windows 10 and 11 (Python 3.14 runs on nothing older), and
+# PyInstaller only bundles it where the Windows SDK is installed -- as on
+# the GitHub build machine -- which made release builds 1 MB bigger.
 a.binaries = [entry for entry in a.binaries
-              if not entry[0].lower().startswith(("libcrypto", "libssl"))]
+              if not entry[0].lower().startswith(("libcrypto", "libssl", "ucrtbase", "api-ms-win-"))]
 pyz = PYZ(a.pure)
 
 exe = EXE(
