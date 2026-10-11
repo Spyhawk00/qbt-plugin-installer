@@ -24,7 +24,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"  # same as the locally tested builds
 
       - name: Check tag matches __version__
         if: startsWith(github.ref, 'refs/tags/')
