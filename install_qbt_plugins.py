@@ -53,7 +53,13 @@ little or nothing, and that is the site, not the plugin.
                          (api.knaben.org/v1): 176-565 results in 2-3 s, magnet
                          links, all categories. RuTracker's Russian-language
                          results are filtered out (often a third of the hits).
-  ✔  LimeTorrents     — PATCHED (domain .lol -> .fun). 160 results
+  ✔  LimeTorrents     — official repo (v4.15). 160 results. Its limetorrents.lol
+                         now 301-redirects to .fun, so the bundled copy that
+                         patched the domain was dropped in 1.2.0: it also had
+                         an unreadable "4.14-patched" version (qBittorrent
+                         reads 16 characters of that line), so qBittorrent
+                         logged a warning at every start and its "Check for
+                         updates" button always replaced it.
   ✔  The Pirate Bay   — official repo, JSON API. 100 results
   ✔  FitGirl Repacks  — CUSTOM plugin, WP REST API. 94 results
   ✔  Torrents-CSV     — official repo, JSON API. 25 results
@@ -89,6 +95,11 @@ little or nothing, and that is the site, not the plugin.
   For ebooks, use the existing plugins with their 'books' category:
   The Pirate Bay, 1337x and Knaben all index ebook torrents.
   Academic Torrents covers research papers / textbooks.
+
+  Note on qBittorrent's own "Check for updates" button: it installs every
+  official plugin that is missing (eztv, torlock, solidtorrents,
+  torrentproject -- all retired here) and replaces same-named plugins with a
+  higher version. Re-running this installer removes them again.
 
   Note on DNS filtering: a filtering resolver (NextDNS, Pi-hole, an ISP block,
   some VPNs) answers torrent-site lookups with 0.0.0.0 or NXDOMAIN, and the
@@ -204,6 +215,7 @@ import atexit
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -215,6 +227,11 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 # MAJOR.MINOR.PATCH -- see CHANGELOG.md for what bumps which part. A release
 # tag (vX.Y.Z) must match this; the build workflow refuses one that doesn't.
 __version__ = "1.2.0"
+
+# Where releases are published. The installer and the "Installer updates"
+# notice engine (qbt_plugins/installer_updates.py, which has its own copy)
+# read the release tags (vX.Y.Z) from here to tell users about a new version.
+RELEASES_URL = "https://github.com/Spyhawk00/qbt-plugin-installer/releases"
 
 # Some Windows consoles default to cp1252 and choke on the box-drawing
 # characters used in the output. Force UTF-8 where supported.
@@ -260,6 +277,10 @@ REMOTE_PLUGINS: Dict[str, str] = {
         "https://raw.githubusercontent.com/qbittorrent/search-plugins"
         "/master/nova3/engines/jackett.py"
     ),
+    "limetorrents.py": (
+        "https://raw.githubusercontent.com/qbittorrent/search-plugins"
+        "/master/nova3/engines/limetorrents.py"
+    ),
     # Community plugins
     "academictorrents.py": (
         "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins"
@@ -296,7 +317,6 @@ def resource_dir() -> Path:
 
 SCRIPT_DIR = resource_dir()
 LOCAL_PLUGINS = [
-    SCRIPT_DIR / "qbt_plugins" / "limetorrents.py",
     SCRIPT_DIR / "qbt_plugins" / "yts.py",
     SCRIPT_DIR / "qbt_plugins" / "fitgirl_repacks.py",  # WP REST API (hydralinks.cloud is Cloudflare-walled)
     SCRIPT_DIR / "qbt_plugins" / "therarbg.py",  # PATCHED: site layout change, bounded paging
@@ -304,6 +324,11 @@ LOCAL_PLUGINS = [
     SCRIPT_DIR / "qbt_plugins" / "leetx.py",  # CUSTOM: 1337x via a mirror without the Cloudflare challenge
     SCRIPT_DIR / "qbt_plugins" / "knaben.py",  # CUSTOM: Knaben's JSON API (many sites at once)
 ]
+
+# Not a search engine, so kept out of LOCAL_PLUGINS and every engine count:
+# it adds an "Update available" result to searches once a newer release of
+# this installer is out (see the file's header).
+NOTICE_PLUGIN = SCRIPT_DIR / "qbt_plugins" / "installer_updates.py"
 
 # Engines an earlier version of this installer put in place that have since
 # died, or that are too slow to keep. Re-running the installer removes them,
@@ -532,6 +557,24 @@ def _wininet_get(url: str, timeout: float) -> bytes:
         if request:
             wi.InternetCloseHandle(request)
         wi.InternetCloseHandle(session)
+
+
+def newer_release(timeout: float = 5) -> Optional[str]:
+    """The newest released version if it is newer than this one, else None.
+
+    Reads the release tags from GitHub's releases feed (not the API, which
+    limits unauthenticated calls). Any failure -- offline, no releases yet --
+    is just None: this is a courtesy, never a reason to stop.
+    """
+    try:
+        feed = http_get(RELEASES_URL + ".atom", timeout).decode("utf-8", "replace")
+    except Exception:  # pylint: disable=broad-exception-caught
+        return None
+    tags = re.findall(r'/releases/tag/v(\d+\.\d+\.\d+)"', feed)
+    latest = max(tags, key=parse_version, default=None)
+    if latest and parse_version(latest) > parse_version(__version__):
+        return latest
+    return None
 
 
 def http_get(url: str, timeout: float = 15) -> bytes:
@@ -1471,6 +1514,10 @@ def run_install(opts: Options,
         status = copy_local(src, dest, opts.force, opts.dry_run)
         results[src.name] = status
         print(f"  {src.name:<30} {status}")
+    # The update notice: installed like a plugin but not counted as an
+    # engine, and a failure here doesn't fail the install.
+    notice = copy_local(NOTICE_PLUGIN, engines_dir / NOTICE_PLUGIN.name, opts.force, opts.dry_run)
+    print(f"  {NOTICE_PLUGIN.name:<30} {notice}")
 
     print()
 
@@ -1606,6 +1653,11 @@ def main() -> None:
                    engines_dir=args.engines_dir, skip_deps=args.skip_deps,
                    yes=args.yes, no_restart=args.no_restart)
     outcome = run_install(opts, confirm=lambda steps: confirm_plan(steps, args.yes))
+    # Here, not in run_install(): the GUI checks on its own thread, and an
+    # offline lookup can take ~10 s that an install shouldn't wait for.
+    newer = newer_release()
+    if newer:
+        print(f"\nA newer version of this installer, v{newer}, is out: {RELEASES_URL}/latest")
     sys.exit(outcome.exit_code)
 
 

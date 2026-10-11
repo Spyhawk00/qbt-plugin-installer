@@ -60,6 +60,22 @@ tells you which version it's upgrading from.
 </picture>
 </p>
 
+### Update notices
+
+When a new version of this installer comes out, you'll see it in qBittorrent:
+your searches get one extra result, **"⬆ Update available"**. Double-click it
+to open the download page, then run the new installer. It shows up in the
+engine list as *Installer updates*; it isn't a torrent site.
+
+To know about new versions, it asks this project's GitHub page at most once a
+day. Like visiting any web page, that shows GitHub your IP address. Nothing
+else is sent, and nothing is downloaded or changed automatically. To turn the
+notices off, untick *Installer updates* in **Search plugins…**.
+
+**Don't use "Check for updates" in qBittorrent's Search plugins window.**
+It reinstalls qBittorrent's own engines that this installer removed because
+they no longer work. If you already did, run the installer again to clean up.
+
 ### Removing engines
 
 To remove one engine, or all of them:

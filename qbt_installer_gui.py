@@ -221,6 +221,8 @@ class InstallerApp:
         self.log_text = None
         self.placed = False
         self.measuring = False
+        self.newer = None           # a newer released version, if there is one
+        self.version_label = None
 
         self.body = tk.Frame(self.root, bg=self.c["bg"])
         self.body.pack(fill="both", expand=True, padx=self.px(PAD), pady=(self.px(18), self.px(PAD)))
@@ -230,6 +232,7 @@ class InstallerApp:
         self.height = self._measure_height()
         self.measuring = False
         self.show_checking()
+        threading.Thread(target=self._check_newer, daemon=True).start()
         self.root.deiconify()
         self.root.after(50, self._pump)
         self.root.after(120, self._spin)
@@ -361,11 +364,30 @@ class InstallerApp:
         top = self.tk.Frame(self.body, bg=self.c["bg"])
         top.pack(fill="x")
         self.label(top, title, size=15, weight="bold").pack(side="left")
-        self.label(top, f"v{core.__version__}", size=9, color="faint").pack(side="right")
+        self.version_label = self.label(top, f"v{core.__version__}", size=9, color="faint")
+        self.version_label.pack(side="right")
+        if self.newer:
+            self._show_newer()
         if subtitle:
             self.label(self.body, subtitle, size=10, color="muted",
                        wraplength=self.px(WIDTH - 2 * PAD)).pack(fill="x", pady=(self.px(2), 0))
         self.tk.Frame(self.body, bg=self.c["bg"], height=self.px(12)).pack(fill="x")
+
+    def _check_newer(self) -> None:
+        newer = core.newer_release()
+        if newer:
+            self.events.put(("newer", newer))
+
+    def _show_newer(self) -> None:
+        """Turn the header's version into a link to the newer release. Same
+        font and one line, so the window keeps its size."""
+        lab = self.version_label
+        if lab is None or not lab.winfo_exists():
+            return
+        lab.configure(text=f"Newer version: v{self.newer}", fg=self.c["accent"], cursor="hand2")
+        lab.bind("<Button-1>", lambda e: webbrowser.open(core.RELEASES_URL + "/latest"))
+        Tooltip(self, lab, "A newer version of this installer is out, with the latest "
+                           "working engines. Click to download it, then run that one.")
 
     def grid_rows(self, parent, rows):
         """Aligned rows: (icon, name, value, action-or-None, tooltip-or-None)."""
@@ -908,6 +930,9 @@ class InstallerApp:
                     self._set_step(event[1], event[2])
                 elif kind == "detected":
                     self.show_welcome(event[1])
+                elif kind == "newer":
+                    self.newer = event[1]
+                    self._show_newer()
                 elif kind == "detect_failed":
                     self.log_lines.append(event[1])
                     out = core.Outcome()

@@ -47,6 +47,11 @@ are assigned after the fact so the history reads in order.
 - **Knaben** (`knaben.py`), an English index that searches The Pirate Bay,
   1337x, Nyaa, YTS and others at once through its API: hundreds of results
   in 2–3 seconds, in every category.
+- **Update notices.** When a newer version is released, searches in
+  qBittorrent show one "⬆ Update available" result; double-clicking it opens
+  the download page. GitHub is asked at most once a day, and nothing is
+  updated automatically. The installer's own window also links to a newer
+  version.
 - **1337x** (`leetx.py`), through the www.1337xx.to mirror. Every 1337x.to /
   1337x.st / x1337x.* domain is behind a Cloudflare challenge.
 - **Upgrading in place.** Re-running brings an older install fully up to date
@@ -60,6 +65,9 @@ are assigned after the fact so the history reads in order.
   with timeouts and bounded paging.
 - `--force` now only means "rewrite even unchanged files, including the nova3
   framework files".
+- **LimeTorrents** is the official plugin again (its old domain now
+  redirects). The bundled patched copy had a version qBittorrent couldn't
+  read, so it logged a warning at every start.
 - The download is named after its version, e.g.
   `qbt-plugin-installer-1.2.0.exe`.
 
