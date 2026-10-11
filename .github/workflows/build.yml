@@ -1,0 +1,57 @@
+name: Build installer .exe
+
+# Build the standalone Windows installer and attach it to a GitHub Release.
+# - Pushing a tag like "v1.0.0" creates/updates a Release with the .exe.
+# - Manual runs (workflow_dispatch) build and upload the .exe as an artifact
+#   you can download from the run page (handy for testing before tagging).
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create/update Releases
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check tag matches __version__
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          want="qbt-plugin-installer ${GITHUB_REF_NAME#v}"
+          # Python on Windows ends lines with \r\n; $(...) only strips the \n.
+          got="$(python install_qbt_plugins.py --version | tr -d '\r')"
+          if [ "$got" != "$want" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match __version__ ($got). Bump __version__ in install_qbt_plugins.py first."
+            exit 1
+          fi
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pyinstaller
+
+      - name: Build one-file executable
+        run: python -m PyInstaller --noconfirm qbt-plugin-installer.spec
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qbt-plugin-installer
+          path: dist/qbt-plugin-installer-*.exe
+
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/qbt-plugin-installer-*.exe

@@ -1,0 +1,12 @@
+# PyInstaller build output
+build/
+dist/
+*.spec
+!qbt-plugin-installer.spec
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Editor workspace (personal)
+*.code-workspace

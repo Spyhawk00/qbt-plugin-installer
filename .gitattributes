@@ -1,0 +1,7 @@
+# Same bytes on every checkout (including CI's Windows runner): the bundled
+# plugins are copied verbatim and compared byte for byte on upgrade.
+* text=auto eol=lf
+# cmd.exe needs CRLF in batch files (labels and goto misbehave with LF).
+*.bat text eol=crlf
+*.png binary
+*.ico binary
