@@ -21,10 +21,19 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"  # same as the locally tested builds
+      # The python.org build, not actions/setup-python: setup-python's 3.14
+      # carries Tcl/Tk 9, which makes the .exe ~2.3 MB bigger and is not the
+      # toolkit the GUI was tested with. python.org's ships Tcl/Tk 8.6.
+      - name: Set up Python (python.org build)
+        shell: pwsh
+        run: |
+          $version = "3.14.5"
+          $dir = Join-Path $env:RUNNER_TEMP "python"
+          Invoke-WebRequest "https://www.python.org/ftp/python/$version/python-$version-amd64.exe" -OutFile python-setup.exe
+          Start-Process python-setup.exe -Wait -ArgumentList "/quiet", "InstallAllUsers=0", "Include_launcher=0", "Include_test=0", "Include_doc=0", "Shortcuts=0", "TargetDir=$dir"
+          Remove-Item python-setup.exe
+          $dir, (Join-Path $dir "Scripts") | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          & (Join-Path $dir "python.exe") -c "import sys, tkinter; print(sys.version); print('Tcl/Tk', tkinter.TclVersion)"
 
       - name: Check tag matches __version__
         if: startsWith(github.ref, 'refs/tags/')
@@ -39,7 +48,7 @@ jobs:
           fi
 
       - name: Install PyInstaller
-        run: python -m pip install --upgrade pyinstaller
+        run: python -m pip install pyinstaller==6.21.0  # the version the .exe was tested with
 
       - name: Build one-file executable
         run: python -m PyInstaller --noconfirm qbt-plugin-installer.spec
