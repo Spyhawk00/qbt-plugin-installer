@@ -20,6 +20,27 @@ To release: merge the "release PR" release-please keeps open. That tags
 Versions before 1.2.0 were not numbered when they shipped; 1.0.0 and 1.1.0
 are assigned after the fact so the history reads in order.
 
+## [1.3.0](https://github.com/Spyhawk00/qbt-plugin-installer/compare/v1.2.0...v1.3.0) (2026-10-25)
+
+
+### Features
+
+* add EZTV, Sukebei, Anime Tosho, nekoBT and Pirateiro engines ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* add tools/refresh_pins.py and tools/health_check.py, with offline tests ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* check that every engine starts after installing, and say why one doesn't ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* drop Jackett, which needs a separate server and otherwise only adds an ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* pin every download to a commit and SHA-256, and check it ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* remove engines from the installer's first screen, or with --uninstall ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* save the install log as qbt-plugin-installer.log ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* say which sites a DNS filter, VPN or provider is blocking ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+
+
+### Bug Fixes
+
+* a real install crashed on an undefined variable left over from the Jackett removal ([17c1585](https://github.com/Spyhawk00/qbt-plugin-installer/commit/17c1585933df5d8cff0ce574c8e70ccdfd7acaaa))
+* remove the unused TorLock, Torrentz2 and torrentdownload copies that ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+* write the log when the .exe runs from a command line with its output ([38ccd16](https://github.com/Spyhawk00/qbt-plugin-installer/commit/38ccd16184494b61c96ba39902e4dafdd9187220))
+
 ## 1.2.0 — 2026-10-10
 
 ### Added
