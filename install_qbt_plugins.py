@@ -1866,7 +1866,8 @@ def _run_install(opts: Options,
     print()
 
     # Remote plugins
-    out.engines_total = len(our_engines())
+    planned = our_engines()
+    out.engines_total = len(planned)
     print("── Remote plugins ──────────────────────────────────────")
     for filename, (url, sha256) in REMOTE_PLUGINS.items():
         dest = engines_dir / filename
