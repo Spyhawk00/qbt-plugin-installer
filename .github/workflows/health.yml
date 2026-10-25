@@ -1,0 +1,44 @@
+name: Engine health
+
+# Once a week, search with every engine (as installed from the pinned
+# files) and check the pins against upstream. Results go to one issue
+# labelled "engine-health": opened or reopened with a comment when
+# something needs attention, closed when everything passes again. See
+# tools/health_check.py.
+#
+# GitHub pauses scheduled workflows in a repository with no commits for 60
+# days (it emails first); re-enable it from the Actions tab.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      # The plugins are plain Python, so Linux is fine (and fast). 3.13 is
+      # the Python the installer puts on users' PCs.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install the engines into a scratch folder
+        run: >
+          python install_qbt_plugins.py --engines-dir "$RUNNER_TEMP/nova3/engines"
+          --yes --no-restart --skip-deps
+
+      - name: Search with every engine
+        env:
+          GH_TOKEN: ${{ github.token }}       # issue updates (gh)
+          GITHUB_TOKEN: ${{ github.token }}   # API calls in the pin check
+        run: python tools/health_check.py --nova3 "$RUNNER_TEMP/nova3" --issue

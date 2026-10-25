@@ -1,0 +1,36 @@
+name: Release
+
+# Versioning is automatic. Commits follow Conventional Commits:
+#   fix:  ...  -> PATCH      feat: ...  -> MINOR      feat!: / BREAKING CHANGE: -> MAJOR
+# On every push to main, release-please keeps one "release PR" open that bumps
+# __version__ in install_qbt_plugins.py and writes the CHANGELOG.md entry.
+# Merging that PR tags vX.Y.Z and creates the GitHub Release; this workflow
+# then starts the build, which attaches the .exe to that Release.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write        # tag + Release
+  pull-requests: write   # the release PR
+  actions: write         # start the build for the new tag
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # A tag made with the built-in token does not trigger build.yml's tag
+      # rule (GitHub blocks workflow chains), but a workflow_dispatch does.
+      - name: Build the .exe for the new tag
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run build.yml --repo "$GITHUB_REPOSITORY" --ref "${{ steps.release.outputs.tag_name }}"
