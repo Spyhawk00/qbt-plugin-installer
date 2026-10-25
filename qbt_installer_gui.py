@@ -33,13 +33,17 @@ IS_WINDOWS = platform.system() == "Windows"
 # ---------------------------------------------------------------------------
 
 def run_cli() -> None:
-    """The windowed .exe has no console; borrow the one it was started from."""
+    """The windowed .exe has no console; borrow the one it was started from.
+    Output already redirected (`> log.txt`, CI's smoke test) stays there."""
     if IS_WINDOWS and getattr(sys, "frozen", False):
         import ctypes
         if ctypes.windll.kernel32.AttachConsole(-1):  # ATTACH_PARENT_PROCESS
-            sys.stdout = open("CONOUT$", "w", encoding="utf-8")
-            sys.stderr = sys.stdout
-            sys.stdin = open("CONIN$", "r", encoding="utf-8")
+            if sys.stdout is None:
+                sys.stdout = open("CONOUT$", "w", encoding="utf-8")
+            if sys.stderr is None:
+                sys.stderr = sys.stdout
+            if sys.stdin is None:
+                sys.stdin = open("CONIN$", "r", encoding="utf-8")
     core.main()
 
 
@@ -85,14 +89,23 @@ ENGINE_NAMES = {
     "knaben": "Knaben", "yts": "YTS (movies)", "nyaasi": "Nyaa (anime)",
     "subsplease": "SubsPlease (anime)", "fitgirl_repacks": "FitGirl (games)",
     "audiobookbay": "AudioBook Bay", "academictorrents": "Academic Torrents",
-    "jackett": "Jackett",
+    "pirateiro": "Pirateiro",
+    "animetosho": "Anime Tosho (anime)", "nekobt": "nekoBT (anime)",
+    "eztv_api": "EZTV (TV)", "sukebei": "Sukebei (adult)",
 }
 
 
-def engine_names():
-    files = list(core.REMOTE_PLUGINS) + [p.name for p in core.LOCAL_PLUGINS]
+def engine_names(files):
+    """Display names for engine files or module names, sorted."""
     stems = [Path(f).stem for f in files]
     return sorted((ENGINE_NAMES.get(st, st) for st in stems), key=str.lower)
+
+
+def listed(names, most=3):
+    """'A', 'A and B', 'A, B and C', 'A, B, C and 2 more'."""
+    if len(names) > most:
+        names = names[:most] + [f"{len(names) - most} more"]
+    return " and ".join([", ".join(names[:-1]), names[-1]] if len(names) > 1 else names)
 
 # Status icon -> colour key.
 ICONS = {"✓": "ok", "!": "warn", "✕": "bad", "•": "faint"}
@@ -103,6 +116,7 @@ STEP_LABELS = {
     "close": "Close qBittorrent",
     "plugins": "Install the search engines",
     "search": "Turn on the Search tab",
+    "remove": "Remove the search engines",
     "reopen": "Reopen qBittorrent",
 }
 SPINNER = "◐◓◑◒"
@@ -258,7 +272,9 @@ class InstallerApp:
         long_path = Path("C:/Users/Example User/AppData/Local/qBittorrent/nova3/engines")
         tallest = core.QbtLocation(long_path, None, "qbittorrent.exe", "standard")
         worst_env = dict(location=tallest, running={0: ""}, exe="qbittorrent.exe",
-                         need_python=True, record=None, has_plugins=False)
+                         need_python=True, record=None, has_plugins=False,
+                         ours=list(core.REMOTE_PLUGINS),
+                         planned=core.our_engines())
         heights = []
 
         def measure():
@@ -269,9 +285,25 @@ class InstallerApp:
         measure()
         self._render_installing(worst_env)
         measure()
+        self._render_removing(worst_env)
+        measure()
         for reopened, python_ok in ((True, True), (False, False)):
             outcome = core.Outcome()
             outcome.reopened, outcome.python_ok = reopened, python_ok
+            self.show_done(outcome, measuring=True)
+            measure()
+        # The longest engine names, at the most the messages list by name,
+        # with both warnings at once.
+        outcome = core.Outcome()
+        outcome.broken = ["subsplease", "academictorrents", "fitgirl_repacks"]
+        outcome.blocked = dict.fromkeys(["subsplease", "academictorrents",
+                                         "fitgirl_repacks", "piratebay"], "sinkhole")
+        self.show_done(outcome, measuring=True)
+        measure()
+        for reopened, needs_restart in ((True, False), (False, True)):
+            outcome = core.Outcome()
+            outcome.uninstall, outcome.reopened = True, reopened
+            outcome.needs_restart = needs_restart
             self.show_done(outcome, measuring=True)
             measure()
 
@@ -458,8 +490,11 @@ class InstallerApp:
             record = core.read_install_record(location.engines_dir) if location else None
             has_plugins = bool(location) and location.engines_dir.exists() and any(
                 p.name != "__init__.py" for p in location.engines_dir.glob("*.py"))
+            ours = core.installed_engines(location.engines_dir) if location else []
+            planned = core.our_engines()
             env = dict(location=location, running=running, exe=exe,
-                       need_python=need_python, record=record, has_plugins=has_plugins)
+                       need_python=need_python, record=record, has_plugins=has_plugins,
+                       ours=ours, planned=planned)
             self.events.put(("detected", env))
         except Exception:
             self.events.put(("detect_failed", traceback.format_exc()))
@@ -470,7 +505,7 @@ class InstallerApp:
         self.env = env
         self.clear()
         location, running = env["location"], env["running"]
-        engines = len(core.REMOTE_PLUGINS) + len(core.LOCAL_PLUGINS)
+        engines = len(env["planned"])
         self.header("Search engines for qBittorrent",
                     f"Adds {engines} working search engines to qBittorrent's Search tab.")
 
@@ -562,6 +597,10 @@ class InstallerApp:
             self.button(bar, "Get qBittorrent",
                         lambda: webbrowser.open("https://www.qbittorrent.org/download")
                         ).pack(side="left")
+        if location and env["ours"]:
+            # Rarely wanted, so a quiet link rather than a button.
+            self.link(bar, "Remove engines…", self.start_remove, size=10).pack(
+                side="left", padx=(self.px(12) if blocked and not qbt_known else 0, 0))
         install = self.button(bar, "Install", self.start_install, primary=True,
                               state="disabled" if blocked else "normal")
         install.pack(side="right")
@@ -591,13 +630,30 @@ class InstallerApp:
     def start_install(self) -> None:
         self._render_installing(self.env)
         opts = core.Options(engines_dir=self.engines_override)
-        threading.Thread(target=self._worker, args=(opts,), daemon=True).start()
+        threading.Thread(target=self._worker, args=(core.run_install, opts),
+                         daemon=True).start()
+
+    def start_remove(self) -> None:
+        """Ask, then remove the engines this installer added."""
+        from tkinter import messagebox
+        env = self.env
+        text = (f"This removes the {len(env['ours'])} search engines this installer "
+                "added to qBittorrent, and its update notices.\n\n")
+        if env["running"]:
+            text += "qBittorrent closes and reopens. It saves your torrents first.\n\n"
+        text += ("Python, your torrents and qBittorrent's settings are not touched. "
+                 "Run this installer again any time to put the engines back.")
+        if not messagebox.askyesno("Remove the search engines?", text, icon="warning",
+                                   default="no", parent=self.root):
+            return
+        # Agreed to just now, so the worker won't ask again.
+        self.shown_steps = set(core.disruptive_steps(False, bool(env["running"])))
+        self._render_removing(env)
+        opts = core.Options(engines_dir=self.engines_override)
+        threading.Thread(target=self._worker, args=(core.run_uninstall, opts),
+                         daemon=True).start()
 
     def _render_installing(self, env) -> None:
-        self.clear()
-        self.header("Installing…")
-
-        card = self.card(self.body)
         keys = []
         if env["need_python"]:
             keys.append("python")
@@ -606,6 +662,21 @@ class InstallerApp:
         keys += ["plugins", "search"]
         if env["running"]:
             keys.append("reopen")
+        names = engine_names(env["planned"])
+        self._render_progress("Installing…", keys, lambda parent: self._engines_panel(
+            parent, "Adding these search engines", names))
+
+    def _render_removing(self, env) -> None:
+        keys = ["close", "remove", "reopen"] if env["running"] else ["remove"]
+        names = engine_names(env["ours"])
+        self._render_progress("Removing…", keys, lambda parent: self._engines_panel(
+            parent, "Removing these search engines", names))
+
+    def _render_progress(self, title, keys, panel) -> None:
+        self.clear()
+        self.header(title)
+
+        card = self.card(self.body)
         for key in keys:
             row = self.tk.Frame(card, bg=self.c["card"])
             row.pack(fill="x", pady=(0, self.px(3)))
@@ -620,7 +691,7 @@ class InstallerApp:
         self.progress.start(12)
 
         bar = self.footer()
-        self._panel(bar, self._engines_panel)
+        self._panel(bar, panel)
         self.fit()
 
     def _panel(self, bar, build, open_log=False) -> None:
@@ -665,12 +736,11 @@ class InstallerApp:
         inner.pack(fill="x", padx=1, pady=1)
         return outer, inner
 
-    def _engines_panel(self, parent):
+    def _engines_panel(self, parent, title, names):
         outer, inner = self._info_card(parent)
-        self.section_title(inner, "Adding these search engines")
+        self.section_title(inner, title)
         grid = self.tk.Frame(inner, bg=self.c["card"])
         grid.pack(fill="x")
-        names = engine_names()
         cols = 3
         per_col = -(-len(names) // cols)
         for i, name in enumerate(names):
@@ -708,7 +778,31 @@ class InstallerApp:
                    size=9, color="faint").pack(fill="x", pady=(self.px(4), 0))
         return outer
 
-    def _worker(self, opts) -> None:
+    def _blocked_panel(self, parent, blocked):
+        outer, inner = self._info_card(parent)
+        self.section_title(inner, "Some search sites are blocked here")
+        names = [ENGINE_NAMES.get(n, n) for n in blocked]
+        self.bullet_list(inner, [
+            ("!", f"Your network blocks {listed(names)}, so "
+                  f"{'that engine' if len(names) == 1 else 'those engines'} will find "
+                  "nothing on this PC. The other engines work."),
+            ("•", "Usually a DNS filter (like Pi-hole or NextDNS), a VPN or your "
+                  "internet provider does this. Turn it off, or use another DNS server."),
+        ])
+        return outer
+
+    def _removed_panel(self, parent):
+        outer, inner = self._info_card(parent)
+        self.section_title(inner, "What's left")
+        self.bullet_list(inner, [
+            ("•", "Python stays installed. If nothing else uses it, remove it in "
+                  "Windows Settings → Apps → Installed apps."),
+            ("•", "To hide the Search tab, untick View → Search Engine in qBittorrent."),
+            ("•", "Run this installer again any time to put the engines back."),
+        ])
+        return outer
+
+    def _worker(self, run, opts) -> None:
         events = self.events
 
         class Capture:
@@ -723,8 +817,8 @@ class InstallerApp:
         old_out, old_err = sys.stdout, sys.stderr
         sys.stdout = sys.stderr = Capture()
         try:
-            outcome = core.run_install(opts, confirm=self._confirm_from_worker,
-                                       step=lambda k, s: events.put(("step", k, s)))
+            outcome = run(opts, confirm=self._confirm_from_worker,
+                          step=lambda k, s: events.put(("step", k, s)))
             events.put(("finished", outcome))
         except Exception:
             events.put(("crashed", traceback.format_exc()))
@@ -794,6 +888,21 @@ class InstallerApp:
         elif outcome.cancelled:
             icon, color, title = "–", "faint", "Cancelled"
             message = "Nothing was changed."
+        elif outcome.uninstall and outcome.failed:
+            icon, color, title = "!", "warn", "Almost done"
+            message = ("Some files couldn't be removed. Exit qBittorrent from its icon "
+                       "near the clock, then try again.")
+        elif outcome.uninstall and outcome.reopened:
+            icon, color, title = "✓", "ok", "Engines removed"
+            message = ("qBittorrent is open again without them, behind this window. "
+                       "Click Finish to go to it.")
+        elif outcome.uninstall and outcome.needs_restart:
+            icon, color, title = "✓", "ok", "Almost done"
+            message = ("Restart qBittorrent so it forgets the removed engines: right-click "
+                       "its icon near the clock, choose Exit, then open it again.")
+        elif outcome.uninstall:
+            icon, color, title = "✓", "ok", "Engines removed"
+            message = "The search engines this installer added are gone."
         elif not outcome.python_ok:
             icon, color, title = "!", "warn", "Almost done"
             message = ("Engines installed, but Python couldn't be installed, so search "
@@ -802,6 +911,20 @@ class InstallerApp:
             icon, color, title = "!", "warn", "Almost done"
             message = (f"{outcome.failed} item(s) couldn't be downloaded. Check your "
                        "internet connection and run this again.")
+        elif outcome.broken:
+            icon, color, title = "!", "warn", "Almost done"
+            names = [ENGINE_NAMES.get(n, n) for n in outcome.broken]
+            if len(names) == outcome.engines_total:
+                message = ("The engines are installed but couldn't start with this PC's "
+                           "Python, so the Search tab will be empty. Show details says why.")
+            elif len(names) <= 3:
+                message = (f"{listed(names)} couldn't start with this PC's Python, so "
+                           f"{'it' if len(names) == 1 else 'they'} won't appear in the "
+                           "Search tab. The other engines are ready.")
+            else:
+                message = (f"{len(names)} engines couldn't start with this PC's Python, so "
+                           "they won't appear in the Search tab. The others are ready; "
+                           "Show details says why.")
         elif outcome.reopened:
             icon, color, title = "✓", "ok", "All done!"
             message = ("qBittorrent is open again, behind this window. Click Finish "
@@ -829,7 +952,11 @@ class InstallerApp:
         self.label(words, message, size=10, color="muted",
                    wraplength=self.inner_width - size - self.px(14)).pack(fill="x", pady=(self.px(2), 0))
 
-        if not crash and not outcome.cancelled and not outcome.error:
+        if outcome.uninstall and not crash and not outcome.cancelled and not outcome.error:
+            self.divider(card)
+            self.label(card, f"{outcome.removed} search engines removed", size=9,
+                       color="faint").pack(fill="x")
+        elif not crash and not outcome.cancelled and not outcome.error:
             parts = [f"{outcome.installed} installed or updated",
                      f"{outcome.skipped} already up to date"]
             if outcome.removed:
@@ -862,8 +989,28 @@ class InstallerApp:
             primary.pack(side="right")
         self.root.bind("<Return>", lambda e: primary.invoke())
         primary.focus_set()
-        self._panel(bar, self._howto_panel, open_log=bool(crash))
+        # A blocked network takes the how-to's place: more useful there, and
+        # the window doesn't have to grow for it.
+        if outcome.uninstall:
+            panel = self._removed_panel
+        elif outcome.blocked and not crash:
+            panel = lambda parent: self._blocked_panel(parent, outcome.blocked)  # noqa: E731
+        else:
+            panel = self._howto_panel
+        self._panel(bar, panel, open_log=bool(crash))
+        if self.log_lines:
+            copy = self.link(bar, "Copy log", lambda: self._copy_log(copy))
+            copy.pack(side="left", padx=(self.px(14), 0))
+            where = f" It's also saved in {outcome.log_path}" if outcome.log_path else ""
+            Tooltip(self, copy, "Copies everything the installer did, to paste into a "
+                                f"question or bug report.{where}")
         self.fit()
+
+    def _copy_log(self, link) -> None:
+        self.root.clipboard_clear()
+        self.root.clipboard_append("".join(self.log_lines))
+        link.configure(text="Copied")
+        self.root.after(1500, lambda: link.winfo_exists() and link.configure(text="Copy log"))
 
     def _stay_on_top(self) -> None:
         """Keep the Done screen above qBittorrent, which grabs the front as it

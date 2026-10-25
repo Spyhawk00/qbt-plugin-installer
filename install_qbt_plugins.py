@@ -21,6 +21,7 @@ Usage (command line):
   python install_qbt_plugins.py --pause      # wait for Enter before exiting
   python install_qbt_plugins.py --yes        # don't ask before installing Python / closing qBittorrent
   python install_qbt_plugins.py --no-restart # leave a running qBittorrent alone
+  python install_qbt_plugins.py --uninstall  # remove the engines this installer added
 
 The double-click .exe is the GUI in qbt_installer_gui.py, a front end over
 run_install() below.
@@ -63,6 +64,36 @@ little or nothing, and that is the site, not the plugin.
   ✔  The Pirate Bay   — official repo, JSON API. 100 results
   ✔  FitGirl Repacks  — CUSTOM plugin, WP REST API. 94 results
   ✔  Torrents-CSV     — official repo, JSON API. 25 results
+  ✔  Pirateiro        — community plugin (LightDestory, v1.4). ADDED Oct 2026.
+                         pirateiro.io: 46 results ("ubuntu"), 141 ("batman"), in
+                         ~6 s. The catalogue is small (0 for "the matrix"), so
+                         a zero on one query is the site. Results link to a
+                         detail page; nova2dl resolves the magnet on download.
+                         Seeds/leech shown, size unknown.
+  ✔  Anime Tosho     — REWRITTEN local copy of Phlexis96's v1.21 (v2.0). ADDED
+                         Oct 2026. Its JSON feed moved: feed.animetosho.xyz
+                         now 308-redirects to feed.animetosho.net (the plugin
+                         got nothing back) and feed.animetosho.org does not
+                         answer. 75 results in ~2 s ("naruto"), magnets with
+                         seeds, size and date. It aggregates Nyaa and nekoBT.
+  ✔  nekoBT           — PATCHED local copy of tolotp's v1.0 (v2.0). ADDED Oct
+                         2026. JSON API, 24-50 results in ~3 s. Upstream
+                         printed a Spanish "no results" sentence into the
+                         output on an empty search; that is gone.
+  ✔  EZTV            — CUSTOM plugin (eztv_api.py, class eztv_api). ADDED Oct
+                         2026. EZTV's search page is Cloudflare-challenged but
+                         its JSON API (eztvx.to/api/get-torrents) is not; it
+                         takes an IMDb id, so the plugin asks IMDb's public
+                         suggestion endpoint for the (up to 3) matching TV
+                         series, then lists each one's newest 200 releases
+                         with magnets, seeds, size and date, in ~1.5 s. TV
+                         shows only: a movie or episode code finds nothing.
+                         Not named "eztv": qBittorrent's "Check for updates"
+                         button installs the official eztv plugin by that name.
+  ✔  Sukebei         — CUSTOM plugin (sukebei.py). ADDED Oct 2026. Nyaa's
+                         adult sister site (sukebei.nyaa.si): no Cloudflare,
+                         same page layout as nyaa.si, 150 results in ~4 s with
+                         magnets, seeds, size and date. Adult content.
   ✔  Academic Torrents — community plugin (LightDestory). 21 results
   ✔  1337x            — CUSTOM plugin (leetx.py, class leetx). RE-ADDED Oct
                          2026. 1337x.to, 1337x.st and the x1337x.* domains
@@ -75,9 +106,10 @@ little or nothing, and that is the site, not the plugin.
                          not a clone with fake links. 5 pages in parallel,
                          magnet resolved on download.
   ✔  YTS              — CUSTOM plugin (movies only). 148 results ("batman")
-  ✔  Jackett          — official repo. Reachable; returns its "api key error"
-                         row until you install Jackett locally and set a key.
-                         That row is the plugin working, not failing.
+  ✘  Jackett          — REMOVED in 1.3.0. It needs a Jackett server (a separate
+                         program) and otherwise adds an "api key error" row to
+                         every search. Retired: re-running deletes jackett.py
+                         and jackett.json from older installs.
   ✔  AudioBook Bay    — REWRITTEN local copy of nKlido's v0.4 (v1.0). 27
                          results in ~5 s ("dune"). Upstream's three mirrors
                          (theaudiobookbay.se, audiobookbay.fi,
@@ -104,7 +136,12 @@ little or nothing, and that is the site, not the plugin.
   Note on DNS filtering: a filtering resolver (NextDNS, Pi-hole, an ISP block,
   some VPNs) answers torrent-site lookups with 0.0.0.0 or NXDOMAIN, and the
   plugin then fails with "getaddrinfo failed". That is not a broken plugin.
-  If several engines fail that way at once, check the resolver first.
+  If several engines fail that way at once, check the resolver first. The
+  installer checks this itself (blocked_engines()) and tells the user.
+  Windows' getaddrinfo reports a 0.0.0.0 answer as a plain failure, so the
+  check reads the raw records with DnsQuery_W. Seen Oct 2026 on a NextDNS
+  PC: www.1337xx.to answered 0.0.0.0 while 1.1.1.1 and 8.8.8.8 gave the
+  real address -- 1337x looked dead and wasn't.
 
   ✘  EZTV             — NOT INSTALLED, for two separate reasons. The site is
                          alive (eztvx.to answered 200 with 1,084,249 torrents
@@ -133,16 +170,18 @@ little or nothing, and that is the site, not the plugin.
                          installer deletes an installed copy.
   ✘  torrentdownload  — REMOVED Oct 2026 as too slow: the host answers every
                          request after a flat ~20 s, so even with pages
-                         fetched concurrently (qbt_plugins/torrentdownload.py,
-                         v1.3, kept but not installed) a search takes ~24 s.
-                         Re-running the installer deletes an installed copy.
+                         fetched concurrently (our patched v1.3, removed from
+                         qbt_plugins/ in 1.3.0; git history has it) a search
+                         takes ~24 s. Re-running the installer deletes an
+                         installed copy.
   ✘  TorLock          — REMOVED Oct 2026: torlock.com, torlock2.com and both
                          www. hosts answer 403 with "cf-mitigated: challenge"
                          (a Cloudflare JS challenge urllib cannot pass).
-                         torlock.cc is a parked page. qbt_plugins/torlock.py
-                         is kept in case the site drops the challenge;
-                         nothing installs it, and re-running the installer
-                         deletes an installed copy (RETIRED_PLUGINS).
+                         torlock.cc is a parked page. Our patched copy was
+                         removed from qbt_plugins/ in 1.3.0 (git history
+                         has it, should the site drop the challenge), and
+                         re-running the installer deletes an installed copy
+                         (RETIRED_PLUGINS).
   ✘  BitSearch        — REMOVED: bitsearch.to answers every request with a
                          308 redirect to the identical URL — an infinite loop.
                          Confirmed by IP, so it is not just the DNS block.
@@ -155,9 +194,19 @@ little or nothing, and that is the site, not the plugin.
                          resolves.
   ✘  Torrentz2        — REMOVED from the install list: torrentz2.nz answered
                          with a 308 redirect to the identical URL (Sept
-                         2026) and no longer resolves at all (Oct 2026). The plugin
-                         file is kept in qbt_plugins/ in case the site
-                         recovers; nothing installs it.
+                         2026) and no longer resolves at all (Oct 2026). Our
+                         copy was removed from qbt_plugins/ in 1.3.0 (git
+                         history has it).
+
+  Tested October 2026 from the qBittorrent wiki's unofficial list, NOT added:
+  ✘  TsukiHime        — works, but the plugin needs Python 3.12 syntax, makes one
+                         extra request per result (~14 s) and crashes (KeyError
+                         'trackers') on half of them. Adds only anime already
+                         covered by Nyaa, Anime Tosho and nekoBT.
+  ✘  Zooqle (.skin)   — TLS handshake aborted (UNEXPECTED_EOF).
+  ✘  small-games.info, bt4gprx, Online-Fix — 403 / API answers non-JSON.
+  ✘  GOG-Games, Snowfl (ChocoTonic fork) — ran but returned nothing.
+  ✘  AniDex, Apache Torrent — old broken scraper / Portuguese-only.
 
   Also tested in September 2026 and NOT added:
   ✘  Kinozal          — returns one row reading "[Error]: .../takelogin.php".
@@ -185,7 +234,8 @@ little or nothing, and that is the site, not the plugin.
                          nothing on it.
   ✘  EZTV (eztvx, DrPurp v3.20) — the same OMDb-key problem as above; its
                          search page is now Cloudflare-challenged too, as are
-                         the eztv.re / .wf / .tf / .yt mirrors.
+                         the eztv.re / .wf / .tf / .yt mirrors. Replaced by
+                         our own eztv_api.py (API + IMDb suggestions).
   ✘  ext.to, rargb.to, TorrentFunk, Tokyo Toshokan (the site, not just the
      plugin), TorrentKitty, Demonoid (dnoid.to)
                        — all answer 403 with a Cloudflare challenge.
@@ -219,14 +269,16 @@ import re
 import shutil
 import subprocess
 import sys
+import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 # The installer's version: the single source of truth. Semantic versioning,
-# MAJOR.MINOR.PATCH -- see CHANGELOG.md for what bumps which part. A release
-# tag (vX.Y.Z) must match this; the build workflow refuses one that doesn't.
-__version__ = "1.2.0"
+# MAJOR.MINOR.PATCH, bumped automatically by release-please from the commit
+# messages (see CHANGELOG.md): never edit it by hand. A release tag (vX.Y.Z)
+# must match this; the build workflow refuses one that doesn't.
+__version__ = "1.2.0"  # x-release-please-version
 
 # Where releases are published. The installer and the "Installer updates"
 # notice engine (qbt_plugins/installer_updates.py, which has its own copy)
@@ -249,55 +301,72 @@ for _stream in (sys.stdout, sys.stderr):
 # Normally qBittorrent writes them itself on first run, but if that never
 # happened the search system stays empty. They live in the main qBittorrent
 # source tree, NOT in the search-plugins repo.
-NOVA3_BASE = "https://raw.githubusercontent.com/qbittorrent/qBittorrent/master/src/searchengine/nova3/"
-FRAMEWORK_FILES = [
-    "nova2.py",
-    "nova2dl.py",
-    "novaprinter.py",
-    "helpers.py",
-    "socks.py",
-]
+#
+# Every download in this file is pinned: a URL at one commit plus the file's
+# SHA-256, so what users get is exactly what was tested, whatever happens to
+# the upstream repos afterwards. A file that doesn't match is refused. Move
+# a pin forward with tools/refresh_pins.py, which shows the upstream diff.
+# The framework is pinned to qBittorrent's latest release (release-5.2.4),
+# not master: these are the bytes qBittorrent 5.2.4 writes itself.
+NOVA3_BASE = ("https://raw.githubusercontent.com/qbittorrent/qBittorrent"
+              "/a1e4649cb8ae581925acc161dbab5cbc6584c542/src/searchengine/nova3/")
+FRAMEWORK_FILES: Dict[str, str] = {
+    "nova2.py": "8e494ee5e0dff3bc8743d302ad4df86e030b4b9ea817db1fd0c7c0c54f3ad7a3",
+    "nova2dl.py": "e768b069bec74d82c8ab496fe8143ac76411a82e9953dd2929ae4414bd0fc89d",
+    "novaprinter.py": "6780ad078487b9e7214e168547e45b786c15d205672aa599fa41e7cd1d6240d8",
+    "helpers.py": "659d4b5e8d7490c6049f8e89229ba330554936cc748a3df1960e9653ba1e1aa4",
+    "socks.py": "80af424d5bf0271e23f27328e34909a28d2fbdc01f1575da6c02ade64bbd3002",
+}
 
 # ---------------------------------------------------------------------------
 # Plugin definitions
 # ---------------------------------------------------------------------------
 
-# Plugins fetched from remote URLs
-REMOTE_PLUGINS: Dict[str, str] = {
+# Plugins fetched from remote URLs: filename -> (URL at a commit, SHA-256).
+# Each is pinned to the last upstream commit that changed that file.
+REMOTE_PLUGINS: Dict[str, Tuple[str, str]] = {
     # Official qBittorrent repo
     "piratebay.py": (
         "https://raw.githubusercontent.com/qbittorrent/search-plugins"
-        "/master/nova3/engines/piratebay.py"
+        "/0635b77ad09c36d4deca55ea044374ea66a18b94/nova3/engines/piratebay.py",
+        "b37f13d21ff5f22ff2154a497cd3ed2d727784024d09d393c1bead88e438dab5",
     ),
     "torrentscsv.py": (
         "https://raw.githubusercontent.com/qbittorrent/search-plugins"
-        "/master/nova3/engines/torrentscsv.py"
-    ),
-    "jackett.py": (
-        "https://raw.githubusercontent.com/qbittorrent/search-plugins"
-        "/master/nova3/engines/jackett.py"
+        "/d5350d35efee633656ccfe05f87e2614fa0e0e16/nova3/engines/torrentscsv.py",
+        "7c7c8a54249e5f2ce237df6421a735a5c1bd7acefd1304d736ee8f925fd6031b",
     ),
     "limetorrents.py": (
         "https://raw.githubusercontent.com/qbittorrent/search-plugins"
-        "/master/nova3/engines/limetorrents.py"
+        "/0635b77ad09c36d4deca55ea044374ea66a18b94/nova3/engines/limetorrents.py",
+        "aca3fbc4956970474a66295f5e61f02532bcdf5399ae97c144bf826a7c8fddce",
     ),
     # Community plugins
     "academictorrents.py": (
         "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins"
-        "/master/src/engines/academictorrents.py"
+        "/025489a1cdcdbca2932279993bf409bc5276489a/src/engines/academictorrents.py",
+        "5a4e025814e1fc8ae97a6c267fb706e03976fef1b629cb63eeb9944ebd9b49d3",
     ),
     "snowfl.py": (
         "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins"
-        "/master/src/engines/snowfl.py"
+        "/1cc1dd5966ef87b1227dcf049a5501c4c649724c/src/engines/snowfl.py",
+        "04a1f767f03c18134ce193eabcda43f4c37c53d56ed06d67b4fc7627ca0eb710",
+    ),
+    "pirateiro.py": (
+        "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins"
+        "/f709b45c1e792f3062036f6b30436515883e7a29/src/engines/pirateiro.py",
+        "eb71a8f5e9cd05b5e469193cc5960c2ba9c109fafc8498752c868e1dabe26f15",
     ),
     # Anime / media
     "nyaasi.py": (
         "https://raw.githubusercontent.com/MadeOfMagicAndWires/qBit-plugins"
-        "/main/engines/nyaasi.py"
+        "/50ac68dff2a39c1b0dfa0c168fde01068324bc29/engines/nyaasi.py",
+        "8b38deb7d22d86c3d64300cd58d55810260ea61b96b0fd552c3748201de44e46",
     ),
     "subsplease.py": (
         "https://raw.githubusercontent.com/kli885/qBittorent-SubsPlease-Search-Plugin"
-        "/main/subsplease.py"
+        "/04aebf0bff7270f4dd0d53eaf1e0f71f4287bee9/subsplease.py",
+        "3348ff9076b03c34ce87152597ffe0034ce1e192520d79b154952aa862bfc21c",
     ),
 }
 
@@ -323,6 +392,10 @@ LOCAL_PLUGINS = [
     SCRIPT_DIR / "qbt_plugins" / "audiobookbay.py",  # PATCHED: live mirror, timeouts, bounded paging
     SCRIPT_DIR / "qbt_plugins" / "leetx.py",  # CUSTOM: 1337x via a mirror without the Cloudflare challenge
     SCRIPT_DIR / "qbt_plugins" / "knaben.py",  # CUSTOM: Knaben's JSON API (many sites at once)
+    SCRIPT_DIR / "qbt_plugins" / "animetosho.py",  # PATCHED: feed moved to animetosho.net
+    SCRIPT_DIR / "qbt_plugins" / "nekobt.py",  # PATCHED: no stray text rows, uses helpers
+    SCRIPT_DIR / "qbt_plugins" / "eztv_api.py",  # CUSTOM: EZTV's JSON API (its search page is Cloudflare-walled)
+    SCRIPT_DIR / "qbt_plugins" / "sukebei.py",  # CUSTOM: Nyaa's adult sister site
 ]
 
 # Not a search engine, so kept out of LOCAL_PLUGINS and every engine count:
@@ -336,6 +409,7 @@ NOTICE_PLUGIN = SCRIPT_DIR / "qbt_plugins" / "installer_updates.py"
 # holds every search open. Each one is explained in the docstring at the top
 # of this file.
 RETIRED_PLUGINS = [
+    "jackett.py",  # needs a Jackett server; removed in 1.3.0
     "torrentgalaxy.py",
     "torrentdownload.py",
     "torlock.py",
@@ -587,51 +661,51 @@ def http_get(url: str, timeout: float = 15) -> bytes:
         return resp.read()
 
 
-def download(url: str, dest: Path, force: bool, dry_run: bool,
-             kind: str = "plugin") -> str:
-    """Download url → dest. Returns status string.
+def sha256_of(data: bytes) -> str:
+    # hashlib's built-in SHA-256: the .exe leaves out OpenSSL's (_hashlib).
+    import hashlib
+    return hashlib.sha256(data).hexdigest()
 
-    kind="plugin"    -> must contain a search class / prettyPrinter. An
-                        installed copy is compared with upstream and replaced
-                        when it differs, so re-running the installer brings
-                        an older install up to date without --force.
-    kind="framework" -> just needs to be plausible Python source. An
-                        installed copy is left alone: qBittorrent writes
-                        these itself to match its own version, and master
-                        may not suit an older qBittorrent.
+
+def download(url: str, sha256: str, dest: Path, force: bool, dry_run: bool,
+             kind: str = "plugin") -> str:
+    """Download url → dest, refusing anything whose SHA-256 isn't `sha256`.
+    Returns status string.
+
+    kind="plugin"    -> an installed copy that differs from the pinned file is
+                        replaced, so re-running the installer brings an older
+                        install up to date without --force.
+    kind="framework" -> an installed copy is left alone: qBittorrent writes
+                        these itself to match its own version, and the pinned
+                        release may not suit an older qBittorrent.
     """
     exists = dest.exists()
     if exists and not force and kind == "framework":
         return "SKIP  (already exists, use --force to overwrite)"
 
-    if dry_run and not exists:
-        return "DRY   would download"
+    # The pin says what the file must be, so an installed copy can be checked
+    # without going online.
+    if exists and not force:
+        try:
+            if sha256_of(dest.read_bytes()) == sha256:
+                return "SKIP  (already up to date)"
+        except OSError:
+            pass
+
+    if dry_run:
+        return "DRY   would update" if exists else "DRY   would download"
 
     try:
         content = http_get(url, timeout=15)
-
-        # Sanity check: must look like the right kind of Python source
-        if kind == "plugin":
-            if b"def search" not in content and b"prettyPrinter" not in content:
-                raise ValueError("downloaded content doesn't look like a plugin")
-        else:  # framework file: just verify it's non-trivial Python
-            if len(content) < 50 or (b"import" not in content
-                                     and b"def " not in content):
-                raise ValueError("downloaded content doesn't look like Python")
+        if sha256_of(content) != sha256:
+            # Not the file that was tested: a changed or tampered upstream,
+            # or a captive portal's login page. Never install it.
+            raise ValueError("download did not match its pinned checksum; refused")
     except Exception as exc:
         if exists:
             # Couldn't check for an update, but the installed copy still works.
             return f"SKIP  (kept installed copy; update check failed: {exc})"
         return f"FAIL  {exc}"
-
-    if exists and not force:
-        try:
-            if dest.read_bytes() == content:
-                return "SKIP  (already up to date)"
-        except OSError:
-            pass
-    if dry_run:
-        return "DRY   would update"
 
     try:
         dest.write_bytes(content)
@@ -732,11 +806,13 @@ KNOWN_THIRD_PARTY = {
 }
 
 
-def _run(cmd: List[str]) -> subprocess.CompletedProcess:
+def _run(cmd: List[str], timeout: Optional[float] = None,
+         cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
     # CREATE_NO_WINDOW: in the windowed GUI build, each console helper
     # (tasklist, py, pip) would otherwise flash up its own black window.
     flags = 0x08000000 if platform.system() == "Windows" else 0
-    return subprocess.run(cmd, capture_output=True, text=True, creationflags=flags)
+    return subprocess.run(cmd, capture_output=True, text=True, creationflags=flags,
+                          timeout=timeout, cwd=cwd, errors="replace")
 
 
 def _registry_qbittorrent() -> List[str]:
@@ -889,7 +965,6 @@ def install_python(dry_run: bool) -> Optional[str]:
         return None
 
     print(f"    Installing Python {version} (about 30 MB, one minute) ...")
-    import hashlib
     import tempfile
     try:
         data = http_get(PYTHON_INSTALLER["url"], timeout=120)
@@ -897,7 +972,7 @@ def install_python(dry_run: bool) -> Optional[str]:
         print(f"    FAIL  download: {exc}")
         offer_install_python()
         return None
-    if hashlib.sha256(data).hexdigest() != PYTHON_INSTALLER["sha256"]:
+    if sha256_of(data) != PYTHON_INSTALLER["sha256"]:
         print("    FAIL  the download did not match the expected checksum; not running it.")
         offer_install_python()
         return None
@@ -1259,6 +1334,253 @@ def install_plugin_dependencies(engines_dir: Path, dry_run: bool) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Load check: do the engines start under the Python qBittorrent will use?
+# ---------------------------------------------------------------------------
+
+def our_engines() -> List[str]:
+    """Module names of the search engines this installer puts in place."""
+    return [Path(f).stem for f in REMOTE_PLUGINS] + [p.stem for p in LOCAL_PLUGINS]
+
+
+def capability_names(xml: str) -> List[str]:
+    """The engines in nova2.py's --capabilities output: the elements one
+    level inside <capabilities>. Read with a regex rather than an XML
+    parser, which would add pyexpat to the .exe for this one job."""
+    names, depth = [], 0
+    for closing, tag, empty in re.findall(r"<(/?)([A-Za-z_]\w*)[^>]*?(/?)>", xml):
+        if closing:
+            depth -= 1
+            continue
+        if depth == 1:
+            names.append(tag)
+        if not empty:
+            depth += 1
+    return names
+
+
+# The reason given for an engine that is fine but can't be listed because
+# nova2.py itself crashed on another one.
+NOVA2_FAILED = "loads, but nova2.py failed (see above)"
+
+# What nova2.py does to each engine, and the attributes its --capabilities
+# reads, so a failure says why instead of the engine silently vanishing.
+_LOAD_PROBE = (
+    "import importlib, sys\n"
+    "name = sys.argv[1]\n"
+    "engine = getattr(importlib.import_module('engines.' + name), name)\n"
+    "engine.name, engine.url, engine.supported_categories\n"
+)
+
+
+def check_engines_load(engines_dir: Path, python: List[str],
+                       expected: List[str]) -> Optional[Dict[str, str]]:
+    """Run nova2.py --capabilities under `python`, as qBittorrent does at
+    startup, and return {engine: reason} for each of the `expected` engines
+    that would be missing from the Search tab (empty if none). nova2.py
+    skips an engine that fails to import without a word, and so does the
+    Search tab, so this is the only way to notice. None if the check itself
+    could not run.
+
+    One engine without a `name` makes nova2.py crash outright, and then
+    qBittorrent shows no engine at all -- even when the culprit is one the
+    user added, which is then listed too.
+    """
+    nova3_dir = engines_dir.parent
+    try:
+        r = _run(python + [str(nova3_dir / "nova2.py"), "--capabilities"],
+                 timeout=120, cwd=nova3_dir)
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"  {'nova2.py --capabilities':<30} SKIP  could not run it: {exc}")
+        return None
+    if r.returncode == 0:
+        loaded = set(capability_names(r.stdout))
+        missing = [name for name in expected if name not in loaded]
+        suspects = missing
+    else:
+        tail = (r.stderr.strip().splitlines() or [f"exit code {r.returncode}"])[-1]
+        print(f"  {'nova2.py --capabilities':<30} FAIL  {tail}")
+        missing = expected
+        suspects = sorted(p.stem for p in engines_dir.glob("*.py")
+                          if not p.stem.startswith("_"))
+
+    broken = {}
+    for name in suspects:
+        try:
+            p = _run(python + ["-c", _LOAD_PROBE, name], timeout=60, cwd=nova3_dir)
+            if p.returncode != 0:
+                broken[name] = (p.stderr.strip().splitlines() or ["(no error message)"])[-1]
+        except (OSError, subprocess.SubprocessError) as exc:
+            broken[name] = str(exc)
+    for name in missing:
+        if name not in broken:
+            broken[name] = NOVA2_FAILED if r.returncode else "nova2.py did not list it"
+    return broken
+
+
+# ---------------------------------------------------------------------------
+# DNS check: is this PC's network blocking the sites?
+# ---------------------------------------------------------------------------
+
+# A filtering resolver (Pi-hole, NextDNS, an ISP block, some VPNs) answers
+# a blocked name with 0.0.0.0 or "no such domain". The engine then fails
+# with "getaddrinfo failed" and returns nothing, exactly like a dead site.
+SINKHOLES = ("0.0.0.0", "::", "::1")
+
+
+def engine_hosts(path: Path) -> List[str]:
+    """The host names an engine really works through: its `url` and any
+    `_API_HOSTS` list on its class (YTS's API, which survives where yts.mx
+    is blocked). Not `_MIRRORS`: those are last-resort fallbacks, mostly
+    behind Cloudflare challenges, so one that resolves proves nothing --
+    on a NextDNS PC 1337x's own site answered 0.0.0.0 while its walled
+    1337x.to mirror resolved fine."""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+    except (OSError, SyntaxError):
+        return []
+    from urllib.parse import urlsplit
+    hosts: List[str] = []
+    for node in tree.body:
+        if not (isinstance(node, ast.ClassDef) and node.name == path.stem):
+            continue
+        for item in node.body:
+            if not (isinstance(item, ast.Assign) and len(item.targets) == 1
+                    and isinstance(item.targets[0], ast.Name)
+                    and item.targets[0].id in ("url", "_API_HOSTS")):
+                continue
+            values = item.value.elts if isinstance(item.value, (ast.List, ast.Tuple)) else [item.value]
+            for value in values:
+                if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                    host = urlsplit(value.value).hostname if "//" in value.value else value.value
+                    if host and host not in hosts:
+                        hosts.append(host.lower())
+    return hosts
+
+
+def _windows_a_records(host: str) -> List[str]:
+    """The raw A records Windows' DNS client gets for `host` ([] if none).
+
+    getaddrinfo() on Windows turns a 0.0.0.0 answer -- NextDNS's way of
+    blocking -- into the same "getaddrinfo failed" as a name that doesn't
+    exist, so a block would look like a dead site. DnsQuery_W shows it.
+    """
+    import ctypes
+    import socket
+
+    class DnsRecord(ctypes.Structure):
+        _fields_ = [("pNext", ctypes.c_void_p), ("pName", ctypes.c_wchar_p),
+                    ("wType", ctypes.c_ushort), ("wDataLength", ctypes.c_ushort),
+                    ("Flags", ctypes.c_ulong), ("dwTtl", ctypes.c_ulong),
+                    ("dwReserved", ctypes.c_ulong),
+                    ("Data", ctypes.c_uint64 * 5)]  # a union holding pointers: 8-aligned
+
+    dnsapi = ctypes.windll.dnsapi
+    first = ctypes.c_void_p()
+    if dnsapi.DnsQuery_W(host, 1, 0, None, ctypes.byref(first), None) != 0:  # 1 = A
+        return []
+    found, node = [], first.value
+    try:
+        while node:
+            record = ctypes.cast(node, ctypes.POINTER(DnsRecord)).contents
+            if record.wType == 1:
+                found.append(socket.inet_ntoa(bytes(record.Data)[:4]))
+            node = record.pNext
+    finally:
+        dnsapi.DnsRecordListFree(first, 1)  # DnsFreeRecordList
+    return found
+
+
+def _sinkholed(addrs) -> bool:
+    return bool(addrs) and all(a in SINKHOLES or a.startswith("127.") for a in addrs)
+
+
+def resolve_hosts(hosts: List[str], timeout: float = 8) -> Dict[str, str]:
+    """host -> "ok", "sinkhole" (answered 0.0.0.0 / loopback) or "fail"
+    (no answer). Looked up in parallel; anything unanswered in `timeout`
+    seconds counts as "fail"."""
+    import socket
+    import threading
+    import time
+    results: Dict[str, str] = {}
+
+    def look_up(host: str) -> None:
+        try:
+            addrs = {info[4][0] for info in socket.getaddrinfo(host, 443)}
+        except (OSError, UnicodeError):
+            raw: List[str] = []
+            if platform.system() == "Windows":
+                try:
+                    raw = _windows_a_records(host)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    pass
+            results[host] = "sinkhole" if _sinkholed(raw) else "fail"
+            return
+        results[host] = "sinkhole" if _sinkholed(addrs) else "ok"
+
+    threads = [threading.Thread(target=look_up, args=(h,), daemon=True) for h in hosts]
+    for t in threads:
+        t.start()
+    deadline = time.monotonic() + timeout
+    for t in threads:
+        t.join(max(0.0, deadline - time.monotonic()))
+    return {h: results.get(h, "fail") for h in hosts}
+
+
+def blocked_engines(engines_dir: Path, engines: List[str]) -> Optional[Dict[str, str]]:
+    """{engine: "sinkhole" | "fail"} for engines none of whose hosts resolve.
+    None when the PC can't look anything up at all (offline), which says
+    nothing about blocking. Only worth reporting per worth_reporting()."""
+    hosts = {name: engine_hosts(engines_dir / f"{name}.py") for name in engines}
+    every = sorted({h for hs in hosts.values() for h in hs} | {"github.com"})
+    answers = resolve_hosts(every)
+    if answers["github.com"] != "ok":
+        return None
+    blocked = {}
+    for name, hs in hosts.items():
+        if hs and not any(answers[h] == "ok" for h in hs):
+            blocked[name] = "sinkhole" if any(answers[h] == "sinkhole" for h in hs) else "fail"
+    return blocked
+
+
+def worth_reporting(blocked: Dict[str, str]) -> bool:
+    """A 0.0.0.0 answer is a block by definition. A name that doesn't
+    resolve may just be one site having a bad day, so that needs two."""
+    return "sinkhole" in blocked.values() or len(blocked) >= 2
+
+
+# ---------------------------------------------------------------------------
+# Install log, saved next to the plugins so users can send it with a question
+# ---------------------------------------------------------------------------
+
+INSTALL_LOG = "qbt-plugin-installer.log"
+
+
+class _Tee:
+    """Passes writes through to `stream` and keeps a copy."""
+
+    def __init__(self, stream) -> None:
+        self.stream, self.parts = stream, []
+
+    def write(self, text: str) -> int:
+        self.parts.append(text)
+        return self.stream.write(text) if self.stream is not None else len(text)
+
+    def flush(self) -> None:
+        if self.stream is not None:
+            self.stream.flush()
+
+
+def save_log(engines_dir: Path, text: str) -> Optional[Path]:
+    path = engines_dir / INSTALL_LOG
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        path.write_text(f"Saved {stamp}\n\n{text}", encoding="utf-8")
+    except OSError:
+        return None
+    return path
+
+
+# ---------------------------------------------------------------------------
 # Install record (which installer version last ran on this engines dir)
 # ---------------------------------------------------------------------------
 
@@ -1365,7 +1687,12 @@ class Outcome:
         self.python_ok = True
         self.reopened = False
         self.needs_restart = False  # qBittorrent still running the old plugins
+        self.broken: List[str] = []  # engines installed but failing to load
+        self.blocked: Dict[str, str] = {}  # engines this network blocks (worth_reporting)
+        self.engines_total = 0       # engines this run installs (our_engines)
+        self.uninstall = False       # this was a run_uninstall()
         self.engines_dir: Optional[Path] = None
+        self.log_path: Optional[Path] = None
 
 
 def disruptive_steps(need_python: bool, running: bool) -> List[str]:
@@ -1386,9 +1713,62 @@ def _noop_step(key: str, state: str) -> None:
     pass
 
 
+def close_for_changes(running: Dict[int, str], dry_run: bool,
+                      step: Callable[[str, str], None]) -> bool:
+    """Close the running qBittorrent (already agreed to). True if it closed."""
+    if not running or dry_run:
+        step("close", "skipped")
+        return False
+    print("── Closing qBittorrent ──────────────────────────────────")
+    step("close", "running")
+    closed = close_qbittorrent(list(running))
+    if closed:
+        print(f"  {'qBittorrent':<30} OK    (closed cleanly; will reopen)")
+    else:
+        print(f"  {'qBittorrent':<30} still running — continuing; restart it at the end")
+    step("close", "done" if closed else "failed")
+    print()
+    return closed
+
+
+def reopen_after_changes(closed: bool, running: Dict[int, str], location: "QbtLocation",
+                         dry_run: bool, step: Callable[[str, str], None]) -> bool:
+    """Start qBittorrent again if close_for_changes() closed it. True if it did."""
+    if not closed:
+        if running and dry_run:
+            print(f"  {'qBittorrent':<30} DRY   would close and reopen")
+        step("reopen", "skipped")
+        return False
+    step("reopen", "running")
+    exe = next((p for p in running.values() if p), None) or location.exe or find_qbittorrent()
+    reopened = bool(exe) and launch_qbittorrent(exe)
+    print(f"  {'qBittorrent':<30} {'OK    (reopened)' if reopened else 'FAIL  could not reopen it'}")
+    step("reopen", "done" if reopened else "failed")
+    return reopened
+
+
 def run_install(opts: Options,
                 confirm: Callable[[List[str]], bool],
                 step: Callable[[str, str], None] = _noop_step) -> Outcome:
+    """_run_install(), also saving what it prints to INSTALL_LOG next to the
+    plugins, for users to send with a question. Not on a dry run or when
+    cancelled, which change nothing."""
+    tee = _Tee(sys.stdout)
+    sys.stdout = tee
+    try:
+        out = _run_install(opts, confirm, step)
+    finally:
+        sys.stdout = tee.stream
+    if not (opts.dry_run or out.cancelled) and out.engines_dir and out.engines_dir.is_dir():
+        out.log_path = save_log(out.engines_dir, "".join(tee.parts))
+        if out.log_path:
+            print(f"Log saved to {out.log_path}")
+    return out
+
+
+def _run_install(opts: Options,
+                 confirm: Callable[[List[str]], bool],
+                 step: Callable[[str, str], None]) -> Outcome:
     """Do the whole install. Prints a detailed log as it goes.
 
     confirm(steps) is called with the disruptive steps (installing Python,
@@ -1452,19 +1832,7 @@ def run_install(opts: Options,
     else:
         step("python", "skipped")
 
-    closed = False
-    if running and not opts.dry_run:
-        print("── Closing qBittorrent ──────────────────────────────────")
-        step("close", "running")
-        closed = close_qbittorrent(list(running))
-        if closed:
-            print(f"  {'qBittorrent':<30} OK    (closed cleanly; will reopen)")
-        else:
-            print(f"  {'qBittorrent':<30} still running — continuing; restart it at the end")
-        step("close", "done" if closed else "failed")
-        print()
-    else:
-        step("close", "skipped")
+    closed = close_for_changes(running, opts.dry_run, step)
 
     step("plugins", "running")
     if not engines_dir.exists():
@@ -1480,10 +1848,10 @@ def run_install(opts: Options,
     nova3_dir = engines_dir.parent
     print("── nova3 framework files ────────────────────────────────")
     framework_missing = 0
-    for fname in FRAMEWORK_FILES:
-        url = NOVA3_BASE + fname
+    for fname, sha256 in FRAMEWORK_FILES.items():
         dest = nova3_dir / fname
-        status = download(url, dest, opts.force, opts.dry_run, kind="framework")
+        status = download(NOVA3_BASE + fname, sha256, dest, opts.force, opts.dry_run,
+                          kind="framework")
         # A framework file only matters if it is absent at the end. With
         # --force while qBittorrent is running, the write is refused with
         # "Permission denied" because qBittorrent holds these files open --
@@ -1498,10 +1866,11 @@ def run_install(opts: Options,
     print()
 
     # Remote plugins
+    out.engines_total = len(our_engines())
     print("── Remote plugins ──────────────────────────────────────")
-    for filename, url in REMOTE_PLUGINS.items():
+    for filename, (url, sha256) in REMOTE_PLUGINS.items():
         dest = engines_dir / filename
-        status = download(url, dest, opts.force, opts.dry_run)
+        status = download(url, sha256, dest, opts.force, opts.dry_run)
         results[filename] = status
         print(f"  {filename:<30} {status}")
 
@@ -1530,11 +1899,66 @@ def run_install(opts: Options,
     if not opts.skip_deps:
         install_plugin_dependencies(engines_dir, opts.dry_run)
 
+    # Start every engine the way qBittorrent will, under the Python it will
+    # use. One that fails to import (a syntax this Python doesn't know, a
+    # missing module) would otherwise just be absent from the Search tab.
+    print("── Checking the engines load ────────────────────────────")
+    total = len(planned)
+    python = None if opts.dry_run or framework_missing else plugin_python()
+    if opts.dry_run:
+        print(f"  {'engines':<30} DRY   would check")
+    elif framework_missing:
+        print(f"  {'engines':<30} SKIP  (nova3 framework files missing)")
+    elif python is None:
+        print(f"  {'engines':<30} SKIP  (no Python to run them yet)")
+    else:
+        broken = check_engines_load(engines_dir, python, planned + [NOTICE_PLUGIN.stem])
+        if broken is not None:
+            ours = planned + [NOTICE_PLUGIN.stem]
+            for name, reason in broken.items():
+                if reason != NOVA2_FAILED:
+                    note = "" if name in ours else "  (not from this installer)"
+                    print(f"  {name + '.py':<30} FAIL  {reason}{note}")
+            blocked = sum(1 for reason in broken.values() if reason == NOVA2_FAILED)
+            if blocked:
+                print(f"  {'the other engines':<30} FAIL  {blocked} load, but qBittorrent "
+                      "can't list any while nova2.py fails")
+            # The update notice isn't an engine, and the user's own engines
+            # aren't ours to count; both are only reported above.
+            out.broken = [name for name in broken if name in planned]
+            if out.broken:
+                print(f"  {'engines':<30} FAIL  {len(out.broken)} of {total} did not load")
+            else:
+                print(f"  {'engines':<30} OK    all {total} load")
+    print()
+
+    # Whether this PC's network lets the engines reach their sites at all:
+    # a DNS filter makes a working engine look dead. Read-only, so it runs
+    # on a dry run too.
+    print("── Can this PC reach the sites ──────────────────────────")
+    blocked = blocked_engines(engines_dir, planned)
+    if blocked is None:
+        print(f"  {'site lookups':<30} SKIP  (this PC can't look up any site; offline?)")
+    elif not blocked:
+        print(f"  {'site lookups':<30} OK    every engine's site was found")
+    else:
+        for name, how in blocked.items():
+            why = "answered 0.0.0.0 (blocked)" if how == "sinkhole" else "name not found"
+            print(f"  {name + '.py':<30} WARN  {why}")
+        if worth_reporting(blocked):
+            out.blocked = blocked
+            print("  This network is blocking these sites, usually with a DNS filter")
+            print("  (Pi-hole, NextDNS), a VPN or the internet provider. Those engines")
+            print("  will find nothing here. That is not a fault in the engines.")
+        else:
+            print("  One site wasn't found; it may just be down for now.")
+    print()
+
     ok    = sum(1 for s in results.values() if s.startswith("OK"))
     skip  = sum(1 for s in results.values() if s.startswith("SKIP"))
     dry   = sum(1 for s in results.values() if s.startswith("DRY"))
     fail  = sum(1 for s in results.values() if s.startswith("FAIL")) + framework_missing
-    step("plugins", "failed" if fail else "done")
+    step("plugins", "failed" if fail or out.broken else "done")
 
     # The Search tab, then reopen qBittorrent if we closed it.
     print("── qBittorrent ──────────────────────────────────────────")
@@ -1550,16 +1974,7 @@ def run_install(opts: Options,
     step("search", "failed" if search_status.startswith("FAIL")
          or "running" in search_status else "done")
 
-    if closed:
-        step("reopen", "running")
-        exe = next((p for p in running.values() if p), None) or location.exe or find_qbittorrent()
-        out.reopened = bool(exe) and launch_qbittorrent(exe)
-        print(f"  {'qBittorrent':<30} {'OK    (reopened)' if out.reopened else 'FAIL  could not reopen it'}")
-        step("reopen", "done" if out.reopened else "failed")
-    else:
-        if running and opts.dry_run:
-            print(f"  {'qBittorrent':<30} DRY   would close and reopen")
-        step("reopen", "skipped")
+    out.reopened = reopen_after_changes(closed, running, location, opts.dry_run, step)
     print()
 
     # Record the version only for a complete install, so a partial one is
@@ -1568,9 +1983,10 @@ def run_install(opts: Options,
         installed = [name for name, s in results.items() if not s.startswith("FAIL")]
         write_install_record(engines_dir, installed)
 
-    out.installed, out.skipped, out.removed, out.failed = ok, skip, len(retired), fail
+    removed = len(retired)
+    out.installed, out.skipped, out.removed, out.failed = ok, skip, removed, fail
     out.needs_restart = not out.reopened and bool(running or still_running)
-    out.exit_code = 1 if fail else 0
+    out.exit_code = 1 if fail or out.broken else 0
 
     print("── Summary ─────────────────────────────────────────────")
     if framework_missing:
@@ -1579,17 +1995,38 @@ def run_install(opts: Options,
         print("  then run this installer again.")
     if opts.dry_run:
         print(f"  Would install: {dry + ok}   Already present: {skip}   "
-              f"Would remove: {len(retired)}   Errors: {fail}")
+              f"Would remove: {removed}   Errors: {fail}")
         print()
         print("  Run without --dry-run to apply.")
     else:
-        print(f"  Installed: {ok}   Skipped: {skip}   Removed: {len(retired)}   Failed: {fail}")
+        print(f"  Installed: {ok}   Skipped: {skip}   Removed: {removed}   Failed: {fail}")
         if not fail:
             print(f"  Plugins are now at installer version v{__version__}.")
         print()
+        if out.broken:
+            if len(out.broken) == total:
+                print("  PROBLEM — qBittorrent will show no search engines: they could")
+                print("  not be started (see \"Checking the engines load\" above).")
+            else:
+                print(f"  PROBLEM — {len(out.broken)} engine(s) won't appear in the Search tab:")
+                print(textwrap.fill(", ".join(out.broken), width=72,
+                                    initial_indent="  ", subsequent_indent="  "))
+                print("  The others work. Why is listed under \"Checking the engines")
+                print("  load\" above.")
+            print()
+        if out.blocked:
+            one = len(out.blocked) == 1
+            print(f"  NOTE — this network blocks {len(out.blocked)} of the sites "
+                  f"({', '.join(out.blocked)}),")
+            print(f"  so {'that engine' if one else 'those engines'} will find nothing here "
+                  "(see \"Can this PC")
+            print("  reach the sites\" above).")
+            print()
         if not out.python_ok:
             print("  Search will not work until Python is installed (see above).")
             print("  Install it, then run this installer again.")
+        elif out.broken and not out.needs_restart:
+            pass  # said above; "ALL DONE" would contradict it
         elif out.reopened:
             print("  ALL DONE — qBittorrent has been reopened. Open its Search tab")
             print("  to use the new search engines.")
@@ -1601,6 +2038,142 @@ def run_install(opts: Options,
             print("    2. Reopen qBittorrent and open the Search tab.")
         else:
             print("  ALL DONE — open qBittorrent and go to the Search tab.")
+    print()
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Uninstall
+# ---------------------------------------------------------------------------
+
+def installed_engines(engines_dir: Path) -> List[str]:
+    """This installer's engines (not the update notice) present in engines_dir."""
+    names = list(REMOTE_PLUGINS) + [p.name for p in LOCAL_PLUGINS]
+    return [name for name in names if (engines_dir / name).is_file()]
+
+
+def run_uninstall(opts: Options,
+                  confirm: Callable[[List[str]], bool],
+                  step: Callable[[str, str], None] = _noop_step) -> Outcome:
+    """Remove the engines this installer added, the update notice and the
+    install record. Python, the nova3 framework, the Search tab setting and
+    engines the user added some other way are left alone.
+
+    confirm() and step() work as in run_install(); the step keys are
+    "close", "remove" and "reopen".
+    """
+    out = Outcome()
+    out.uninstall = True
+    print(f"qBittorrent Search Plugin Installer v{__version__} — removing the engines")
+    print()
+
+    location = locate_qbittorrent(opts.engines_dir)
+    if location is None:
+        print("ERROR: Could not detect qBittorrent engines directory.")
+        print("       Use --engines-dir /path/to/engines to specify it manually.")
+        out.exit_code, out.error = 1, "Could not find qBittorrent's plugin folder."
+        return out
+    engines_dir = out.engines_dir = location.engines_dir
+    print(f"Engines dir: {engines_dir}")
+    print()
+
+    engines = installed_engines(engines_dir)
+    targets = engines + [NOTICE_PLUGIN.name]
+    record = engines_dir / INSTALL_RECORD
+    if not engines and not any((engines_dir / name).exists()
+                               for name in (NOTICE_PLUGIN.name, INSTALL_RECORD, INSTALL_LOG)):
+        print("Nothing to remove: none of this installer's engines are in that folder.")
+        for key in ("close", "remove", "reopen"):
+            step(key, "skipped")
+        return out
+
+    running = {} if opts.no_restart else qbittorrent_processes()
+    disruptive = disruptive_steps(False, bool(running))
+    what = (f"Remove the {len(engines)} search engines this installer added, and its "
+            "update notices. Python and your torrents are not touched.")
+    if opts.dry_run:
+        if disruptive:
+            print("── Before we start ──────────────────────────────────────")
+            print("  A real run would first ask before it:")
+            for line in disruptive:
+                print(f"    • {line}")
+            print()
+    elif not confirm(disruptive + [what]):
+        out.cancelled = True
+        return out
+
+    # Closed first so the Search tab doesn't keep offering engines whose
+    # files are gone: qBittorrent reads the list only at startup.
+    closed = close_for_changes(running, opts.dry_run, step)
+
+    print("── Removing engines ─────────────────────────────────────")
+    step("remove", "running")
+    for filename in targets:
+        leftovers = retired_leftovers(engines_dir, filename)
+        if not leftovers:
+            continue
+        failed = None
+        if not opts.dry_run:
+            for path in leftovers:
+                try:
+                    path.unlink()
+                except OSError as exc:
+                    failed = exc
+        if failed:
+            out.failed += 1
+            print(f"  {filename:<30} FAIL  {failed}")
+            continue
+        if filename in engines:
+            out.removed += 1
+        print(f"  {filename:<30} {'DRY   would remove' if opts.dry_run else 'REMOVED'}")
+    for extra in (record, engines_dir / INSTALL_LOG):
+        if not extra.exists():
+            continue
+        if opts.dry_run:
+            print(f"  {extra.name:<30} DRY   would remove")
+            continue
+        try:
+            extra.unlink()
+            print(f"  {extra.name:<30} REMOVED")
+        except OSError as exc:
+            out.failed += 1
+            print(f"  {extra.name:<30} FAIL  {exc}")
+    if not opts.dry_run:
+        # A downloaded update the notice engine would have cleaned up later.
+        import tempfile
+        shutil.rmtree(Path(tempfile.gettempdir()) / "qbt-plugin-installer-update",
+                      ignore_errors=True)
+    step("remove", "failed" if out.failed else "done")
+    print()
+
+    if closed or (running and opts.dry_run):
+        print("── qBittorrent ──────────────────────────────────────────")
+        out.reopened = reopen_after_changes(closed, running, location, opts.dry_run, step)
+        print()
+    else:
+        step("reopen", "skipped")
+
+    still_running = bool(qbittorrent_processes()) if not opts.dry_run else False
+    out.needs_restart = not out.reopened and bool(running or still_running)
+    out.exit_code = 1 if out.failed else 0
+
+    print("── Summary ─────────────────────────────────────────────")
+    if opts.dry_run:
+        print(f"  Would remove: {out.removed} engines   Errors: {out.failed}")
+        print()
+        print("  Run without --dry-run to apply.")
+    else:
+        print(f"  Removed: {out.removed} engines   Failed: {out.failed}")
+        print()
+        if out.failed:
+            print("  Some files could not be removed (see above). Exit qBittorrent")
+            print("  from the tray icon, then run this again.")
+        elif out.needs_restart:
+            print("  ALMOST DONE — restart qBittorrent so it forgets the removed engines:")
+            print("  right-click its tray icon (near the clock), choose Exit, reopen it.")
+        else:
+            print("  DONE — the engines are gone. Run the installer again any time to")
+            print("  put them back.")
     print()
     return out
 
@@ -1642,6 +2215,11 @@ def main() -> None:
         "--no-restart", action="store_true",
         help="Leave a running qBittorrent alone (restart it yourself afterwards)."
     )
+    parser.add_argument(
+        "--uninstall", action="store_true",
+        help="Remove the engines this installer added (keeps Python and "
+             "qBittorrent's settings)."
+    )
     args = parser.parse_args()
 
     # Keep the window open if asked (by the launchers) or if we were started by
@@ -1652,6 +2230,8 @@ def main() -> None:
     opts = Options(dry_run=args.dry_run, force=args.force,
                    engines_dir=args.engines_dir, skip_deps=args.skip_deps,
                    yes=args.yes, no_restart=args.no_restart)
+    if args.uninstall:
+        sys.exit(run_uninstall(opts, lambda steps: confirm_plan(steps, args.yes)).exit_code)
     outcome = run_install(opts, confirm=lambda steps: confirm_plan(steps, args.yes))
     # Here, not in run_install(): the GUI checks on its own thread, and an
     # offline lookup can take ~10 s that an install shouldn't wait for.
