@@ -1,7 +1,7 @@
 # qBittorrent Search Plugin Installer
 
 Adds a batch of working **search engines** to qBittorrent's *Search* tab —
-The Pirate Bay, 1337x, Knaben, TheRARBG, snowfl, YTS, Nyaa, SubsPlease,
+The Pirate Bay, 1337x, Knaben, TheRARBG, snowfl, YTS, Nyaa, SubsPlease, Anime Tosho, nekoBT, EZTV, Sukebei,
 LimeTorrents, Torrents-CSV, Academic Torrents, audiobooks and game repacks —
 and sets up everything they need. One download, one double-click.
 
@@ -43,6 +43,15 @@ You need qBittorrent already installed. Nothing else.
 - **Closes and reopens qBittorrent** if it's running, so the new engines show
   up. It saves your torrents first, exactly like choosing *Exit*, so nothing
   is lost. You are told before this happens.
+- **Checks every engine starts**, and tells you if your network blocks any
+  of the sites (a DNS filter like Pi-hole or NextDNS, a VPN or your internet
+  provider can do that, and the engine then finds nothing).
+
+### Need help?
+
+The last screen has a **Copy log** link: paste what it copies into your
+question or bug report. The same log is saved as `qbt-plugin-installer.log`
+in qBittorrent's plugin folder.
 
 ### Already installed an older version?
 
@@ -81,7 +90,12 @@ they no longer work. If you already did, run the installer again to clean up.
 
 ### Removing engines
 
-To remove one engine, or all of them:
+To remove all of them, run the installer and click **Remove engines…** at
+the bottom left of its first screen. It removes only what this installer
+added: engines you installed some other way stay, and so do your torrents
+and qBittorrent's settings.
+
+To remove just one engine:
 
 1. Open qBittorrent and click the **Search** tab.
 2. Click **Search plugins…** (bottom right).
@@ -106,6 +120,7 @@ python install_qbt_plugins.py --dry-run  # preview, change nothing
 python install_qbt_plugins.py --yes      # don't ask first
 python install_qbt_plugins.py --no-restart  # leave a running qBittorrent alone
 python install_qbt_plugins.py --force    # also rewrite unchanged files + nova3 framework
+python install_qbt_plugins.py --uninstall  # remove the engines this installer added
 python install_qbt_plugins.py --help     # all options
 python qbt_installer_gui.py              # the GUI, from source
 ```
@@ -130,5 +145,26 @@ every `v*` tag and attaches it to a Release automatically. The tag must match
 The installer copies the [`qbt_plugins/`](qbt_plugins) custom plugins and
 downloads a curated set of community plugins into qBittorrent's
 `nova3/engines` directory, then auto-installs any third-party Python packages a
-plugin needs (currently none — all are standard-library only). See the header
-of [`install_qbt_plugins.py`](install_qbt_plugins.py) for the full verified list.
+plugin needs (currently none — all are standard-library only), and finally
+starts every engine under the Python qBittorrent will use to confirm it
+loads. See the header of [`install_qbt_plugins.py`](install_qbt_plugins.py)
+for the full verified list.
+
+Every downloaded file is pinned to an upstream commit and its SHA-256, so
+users get exactly what was tested. To move the pins forward, run
+`python tools/refresh_pins.py`, read the diffs it prints, then rerun it with
+`--write` and test the changed engines.
+
+### Tests and health checks
+
+```bash
+python -m pip install pytest
+python -m pytest                 # offline unit tests (also run in CI)
+python tools/health_check.py     # search with every installed engine
+```
+
+CI builds and smoke-tests the `.exe` on every push to `main`. Every Monday
+[`health.yml`](.github/workflows/health.yml) searches with every engine and
+compares the pins with upstream; when something needs attention it opens
+(or reopens) an issue labelled `engine-health`, and closes it when all is
+well again.

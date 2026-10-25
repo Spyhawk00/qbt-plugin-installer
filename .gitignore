@@ -10,3 +10,6 @@ __pycache__/
 
 # Editor workspace (personal)
 *.code-workspace
+
+# Test runs
+.pytest_cache/

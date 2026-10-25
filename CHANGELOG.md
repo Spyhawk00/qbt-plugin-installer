@@ -1,17 +1,21 @@
 # Changelog
 
-The installer uses [semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH`.
-The version lives in one place, `__version__` in `install_qbt_plugins.py`.
+The installer uses [semantic versioning](https://semver.org), and the version
+is set automatically: commits follow [Conventional Commits](https://www.conventionalcommits.org),
+and [release-please](https://github.com/googleapis/release-please) works out
+the next number, edits `__version__` in `install_qbt_plugins.py` and writes
+the entries below from the commit messages. Nothing here is edited by hand
+for new versions.
 
-| Bump      | When                                                                 |
-|-----------|----------------------------------------------------------------------|
-| **MAJOR** | A change that can break an existing setup: new requirements (e.g. a newer minimum Python), a different install location, removing a command-line option. |
-| **MINOR** | Engines added or removed, or a new installer feature.                |
-| **PATCH** | Fixes only: a plugin repaired, a bug fixed, docs. The engine list is unchanged. |
+| Commit            | Bump      | Use it for                                                |
+|-------------------|-----------|-----------------------------------------------------------|
+| `fix:`            | **PATCH** | A plugin repaired, a bug fixed. The engine list is unchanged. |
+| `feat:`           | **MINOR** | Engines added or removed, or a new installer feature.     |
+| `feat!:` or a `BREAKING CHANGE:` footer | **MAJOR** | Can break an existing setup: a newer minimum Python, a different install location, a removed command-line option. |
+| `docs:` `test:` `chore:` `ci:` `refactor:` | none | Nothing user-facing; no release by themselves. |
 
-To release: bump `__version__`, add a section below, then push a tag
-`v<version>` (e.g. `v1.2.0`). The build workflow refuses a tag that does not
-match `__version__`.
+To release: merge the "release PR" release-please keeps open. That tags
+`v<version>` and the build attaches the `.exe` to the GitHub Release.
 
 Versions before 1.2.0 were not numbered when they shipped; 1.0.0 and 1.1.0
 are assigned after the fact so the history reads in order.
