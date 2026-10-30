@@ -244,3 +244,32 @@ def test_tsuki_empty_results_and_minimum_query_length(engine):
     assert not requests
     obj.search('zzqxvnonexistent')
     assert not rows and len(requests) == 1
+
+
+def test_limetorrents_retries_a_stalled_page_and_gives_up_after_three(monkeypatch):
+    calls = []
+    outcomes = iter([TimeoutError('read timed out'), '<html>page</html>', '', TimeoutError('t'), ''])
+
+    def retrieve_url(url):
+        calls.append(url)
+        outcome = next(outcomes)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    printer = types.ModuleType('novaprinter')
+    printer.prettyPrinter = lambda row: None
+    helpers = types.ModuleType('helpers')
+    helpers.retrieve_url = retrieve_url
+    monkeypatch.setitem(sys.modules, 'novaprinter', printer)
+    monkeypatch.setitem(sys.modules, 'helpers', helpers)
+    path = Path(__file__).resolve().parents[1] / 'qbt_plugins' / 'limetorrents.py'
+    spec = importlib.util.spec_from_file_location('tested_limetorrents', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    obj = module.limetorrents()
+
+    assert obj._get_page('https://x/1') == '<html>page</html>'
+    assert len(calls) == 2
+    assert obj._get_page('https://x/2') == ''
+    assert len(calls) == 5

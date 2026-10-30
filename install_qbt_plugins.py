@@ -54,13 +54,18 @@ little or nothing, and that is the site, not the plugin.
                          (api.knaben.org/v1): 176-565 results in 2-3 s, magnet
                          links, all categories. RuTracker's Russian-language
                          results are filtered out (often a third of the hits).
-  ✔  LimeTorrents     — official repo (v4.15). 160 results. Its limetorrents.lol
-                         now 301-redirects to .fun, so the bundled copy that
-                         patched the domain was dropped in 1.2.0: it also had
-                         an unreadable "4.14-patched" version (qBittorrent
-                         reads 16 characters of that line), so qBittorrent
-                         logged a warning at every start and its "Check for
-                         updates" button always replaced it.
+  ✔  LimeTorrents     — PATCHED official v4.15 (bundled as 4.16). 160 results.
+                         limetorrents.lol 301-redirects to .fun, which the
+                         official code follows, so the domain is not patched.
+                         The site sometimes holds one page request for a
+                         minute (or forever) and answers the same URL in a
+                         second; the official code then froze the whole
+                         search, so each page gets a 5 s timeout and two
+                         retries. The
+                         version is a plain 4.16 (an unreadable
+                         "4.14-patched" made qBittorrent warn at every start
+                         in 1.2.0), above upstream so "Check for updates"
+                         doesn't overwrite it.
   ✔  The Pirate Bay   — official repo, JSON API. 100 results
   ✔  FitGirl Repacks  — CUSTOM plugin, WP REST API. 94 results
   ✔  Torrents-CSV     — official repo, JSON API. 25 results
@@ -369,11 +374,6 @@ REMOTE_PLUGINS: Dict[str, Tuple[str, str]] = {
         "/d5350d35efee633656ccfe05f87e2614fa0e0e16/nova3/engines/torrentscsv.py",
         "7c7c8a54249e5f2ce237df6421a735a5c1bd7acefd1304d736ee8f925fd6031b",
     ),
-    "limetorrents.py": (
-        "https://raw.githubusercontent.com/qbittorrent/search-plugins"
-        "/0635b77ad09c36d4deca55ea044374ea66a18b94/nova3/engines/limetorrents.py",
-        "aca3fbc4956970474a66295f5e61f02532bcdf5399ae97c144bf826a7c8fddce",
-    ),
     # Community plugins
     "academictorrents.py": (
         "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins"
@@ -433,6 +433,7 @@ LOCAL_PLUGINS = [
     SCRIPT_DIR / "qbt_plugins" / "linuxtracker.py",  # CUSTOM: redesigned public search, bounded paging
     SCRIPT_DIR / "qbt_plugins" / "tokyotosho.py",  # CUSTOM: working RSS search, replaces broken HTML scraper
     SCRIPT_DIR / "qbt_plugins" / "publicdomaintorrents.py",  # CUSTOM: classic-film catalogue
+    SCRIPT_DIR / "qbt_plugins" / "limetorrents.py",  # PATCHED: timeout + retry for pages the site stalls
     SCRIPT_DIR / "qbt_plugins" / "fosstorrents.py",  # CUSTOM: published torrent catalogue and project categories
     SCRIPT_DIR / "qbt_plugins" / "tsukihime.py",  # CUSTOM: English-tagged API results, no per-release requests
 ]
