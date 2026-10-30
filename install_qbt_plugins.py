@@ -311,7 +311,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 # MAJOR.MINOR.PATCH, bumped automatically by release-please from the commit
 # messages (see CHANGELOG.md): never edit it by hand. A release tag (vX.Y.Z)
 # must match this; the build workflow refuses one that doesn't.
-__version__ = "1.3.0"  # x-release-please-version
+__version__ = "1.4.0"  # x-release-please-version
 
 # Where releases are published. The installer and the "Installer updates"
 # notice engine (qbt_plugins/installer_updates.py, which has its own copy)
