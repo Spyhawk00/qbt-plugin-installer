@@ -253,8 +253,8 @@ def test_jackett_is_retired_and_cleaned_with_its_settings(tmp_path):
 def test_engine_hosts_are_url_and_api_hosts_not_mirrors():
     hosts = core.engine_hosts(REPO / "qbt_plugins" / "yts.py")
     assert hosts[0] == "yts.mx" and "movies-api.accel.li" in hosts
-    # 1337x's walled fallbacks resolve even where its real site is blocked.
-    assert core.engine_hosts(REPO / "qbt_plugins" / "leetx.py") == ["www.1337xx.to"]
+    # Knaben is now a working API fallback; challenged mirrors stay excluded.
+    assert core.engine_hosts(REPO / "qbt_plugins" / "leetx.py") == ["www.1337xx.to", "api.knaben.org"]
 
 
 @pytest.fixture

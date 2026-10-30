@@ -40,6 +40,7 @@ import install_qbt_plugins as core  # noqa: E402
 # A query each site has plenty of results for. Anything not listed uses
 # DEFAULT_QUERY. Plain words: nova2.py URL-encodes them itself.
 QUERIES = {
+    "leetx": "batman",  # Knaben's safety-filtered 1337x subset has no Ubuntu hits
     "nyaasi": "naruto",
     "subsplease": "naruto",
     "animetosho": "naruto",
@@ -50,6 +51,12 @@ QUERIES = {
     "fitgirl_repacks": "cyberpunk",
     "academictorrents": "imagenet",
     "audiobookbay": "dune",
+    "internetarchive": "ubuntu",
+    "linuxtracker": "ubuntu",
+    "tokyotosho": "naruto",
+    "publicdomaintorrents": "night of the living dead",
+    "fosstorrents": "blender",
+    "tsukihime": "naruto",
 }
 DEFAULT_QUERY = "ubuntu"
 TIMEOUT = 60      # seconds before a search counts as hung
@@ -111,8 +118,7 @@ def check_engines(nova3: Path, retry_delay: float) -> list:
             again = search(nova3, results[i]["engine"])
             print(f"  {again['engine']:<20} {again['status']:<8} {again['rows']:>5} rows  "
                   f"{again['seconds']:>5} s  {again['detail']}", flush=True)
-            if again["status"] == "OK" or results[i]["status"] in ("TIMEOUT", "ERROR"):
-                results[i] = again
+            results[i] = again
     return results
 
 

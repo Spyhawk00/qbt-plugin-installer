@@ -2,7 +2,8 @@
 
 Adds a batch of working **search engines** to qBittorrent's *Search* tab —
 The Pirate Bay, 1337x, Knaben, TheRARBG, snowfl, YTS, Nyaa, SubsPlease, Anime Tosho, nekoBT, EZTV, Sukebei,
-LimeTorrents, Torrents-CSV, Academic Torrents, audiobooks and game repacks —
+LimeTorrents, Torrents-CSV, Academic Torrents, Internet Archive, LinuxTracker,
+Tokyo Toshokan, Public Domain Torrents, FOSS Torrents, TsukiHime, audiobooks and game repacks —
 and sets up everything they need. One download, one double-click.
 
 Every engine is checked against the live site before release; ones that have
@@ -10,6 +11,16 @@ gone dead or too slow are dropped rather than left to fail in the Search tab.
 The list that is installed, and the reason anything was removed, is at the
 top of `install_qbt_plugins.py`. See [CHANGELOG.md](CHANGELOG.md) for what
 changed in each version.
+
+The [October 29 engine review](docs/ENGINE-REVISIT-2026-10-29.md) records new
+additions, recovered search endpoints, download checks and remaining limitations.
+
+When direct 1337x search is unavailable, its engine uses Knaben's indexed
+1337x subset. These results say **[1337x via Knaben]** and provide direct magnets.
+Coverage is partial; see the [coverage report](docs/KNABEN-1337X-COVERAGE-2026-10-29.md).
+
+The [FOSS Torrents and TsukiHime review](docs/FOSS-TSUKIHIME-2026-10-30.md)
+records their catalogue coverage, overlap checks and limitations.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/welcome-dark.png">

@@ -92,6 +92,9 @@ ENGINE_NAMES = {
     "pirateiro": "Pirateiro",
     "animetosho": "Anime Tosho (anime)", "nekobt": "nekoBT (anime)",
     "eztv_api": "EZTV (TV)", "sukebei": "Sukebei (adult)",
+    "internetarchive": "Internet Archive", "linuxtracker": "LinuxTracker",
+    "tokyotosho": "Tokyo Toshokan", "publicdomaintorrents": "Public Domain Torrents",
+    "fosstorrents": "FOSS Torrents", "tsukihime": "TsukiHime (anime)",
 }
 
 

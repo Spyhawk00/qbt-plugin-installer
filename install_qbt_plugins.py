@@ -95,16 +95,18 @@ little or nothing, and that is the site, not the plugin.
                          same page layout as nyaa.si, 150 results in ~4 s with
                          magnets, seeds, size and date. Adult content.
   ✔  Academic Torrents — community plugin (LightDestory). 21 results
-  ✔  1337x            — CUSTOM plugin (leetx.py, class leetx). RE-ADDED Oct
-                         2026. 1337x.to, 1337x.st and the x1337x.* domains
-                         are all behind a Cloudflare JS challenge (403),
-                         which is why it was removed in June. www.1337xx.to
-                         serves the same index without one: identical
-                         markup, uploads from the current week, and its
-                         info hashes match the torrents itorrents.org holds
-                         under the same names, so it is a real mirror and
-                         not a clone with fake links. 5 pages in parallel,
-                         magnet resolved on download.
+  ✔  1337x            — CUSTOM plugin (leetx.py, class leetx), v1.1.
+                         October 29: both 1337x.to and the previously working
+                         www.1337xx.to mirror now challenge requests. Briefly
+                         probes direct mirrors, then uses Knaben API v2 with
+                         t=1337x when unavailable. Fallback titles explicitly
+                         say [1337x via Knaben]; only validated magnets/known
+                         hashes are accepted, deduplicated by hash. Live peer
+                         counts take precedence, including zero; missing live
+                         values fall back to source counts. Safety and adult
+                         filtering stay enabled; source-zero entries allowed.
+                         At most two 300-row API pages, 8 s request timeout.
+                         Coverage is partial. See the Knaben coverage report.
   ✔  YTS              — CUSTOM plugin (movies only). 148 results ("batman")
   ✘  Jackett          — REMOVED in 1.3.0. It needs a Jackett server (a separate
                          program) and otherwise adds an "api key error" row to
@@ -127,6 +129,34 @@ little or nothing, and that is the site, not the plugin.
   For ebooks, use the existing plugins with their 'books' category:
   The Pirate Bay, 1337x and Knaben all index ebook torrents.
   Academic Torrents covers research papers / textbooks.
+
+  Added / recovered October 29, 2026 (isolated nova2.py checks):
+    Internet Archive: custom public search API plugin, 100 results in ~2 s.
+      Only torrent-bearing items; excludes restricted / logged-in collections.
+      Sample .torrent downloads validated. No peer counts; title search only.
+    LinuxTracker: rewritten for /torrents/?q=... after the site redesign.
+      Two pages maximum, 50 Ubuntu results in ~2 s; direct magnets. A sample
+      torrent's info hash matches the magnet. Supersedes old scraper failures.
+    Tokyo Toshokan: new tokyotosho.py uses searchable rss.php?terms=...;
+      the HTML pages remain challenged. 135 all-category / 107 anime results
+      for Naruto; one repeat request timed out at 10 s. Excludes explicitly
+      Non-English entries. The incompatible tokyotoshokan.py stays retired.
+    Public Domain Torrents: new catalogue scraper, 1 Night of the Living Dead
+      result / 9 Sherlock Holmes results in ~1 s. Full-size AVI torrent is
+      resolved on selection; sample metainfo validated. Peer counts unknown.
+  Revisit details and remaining failures: docs/ENGINE-REVISIT-2026-10-29.md.
+
+  Added October 30, 2026:
+    FOSS Torrents: custom published-catalogue search (1,072 feed entries).
+      Blender: 26 results; 0 A.D.: 7; Ubuntu/software: 36, about 2 s. A second
+      feed supplies project/category links; no per-result requests. Sample
+      Blender and 0 A.D. metainfo validated. Size/peer counts unknown.
+    TsukiHime: custom API search replaces the old plugin's per-result tracker
+      requests and missing-trackers crashes. One request, at most 100 raw
+      entries; requires English audio/subtitle tags and excludes adult rows.
+      Naruto: 67; Frieren: 70 in ~1.5 s. 26 Naruto hashes were absent from
+      the compared Nyaa/Anime Tosho/nekoBT result samples. Peer counts unknown.
+  Details: docs/FOSS-TSUKIHIME-2026-10-30.md.
 
   Note on qBittorrent's own "Check for updates" button: it installs every
   official plugin that is missing (eztv, torlock, solidtorrents,
@@ -202,7 +232,8 @@ little or nothing, and that is the site, not the plugin.
   ✘  TsukiHime        — works, but the plugin needs Python 3.12 syntax, makes one
                          extra request per result (~14 s) and crashes (KeyError
                          'trackers') on half of them. Adds only anime already
-                         covered by Nyaa, Anime Tosho and nekoBT.
+                         covered by Nyaa, Anime Tosho and nekoBT. Superseded
+                         by the October 30 custom API plugin above.
   ✘  Zooqle (.skin)   — TLS handshake aborted (UNEXPECTED_EOF).
   ✘  small-games.info, bt4gprx, Online-Fix — 403 / API answers non-JSON.
   ✘  GOG-Games, Snowfl (ChocoTonic fork) — ran but returned nothing.
@@ -229,9 +260,10 @@ little or nothing, and that is the site, not the plugin.
   ✘  CloudTorrents    — its API answers Cloudflare 526 (origin down).
   ✘  AnimeTosho       — feed.animetosho.org did not answer within 11 s.
   ✘  torrentdownloads.pro — still a flat ~20 s per request.
-  ✘  TorrentClaw      — its API answers "Forbidden" without an API key.
+  ✘  TorrentClaw      — October 29: anonymous JSON search works, but magnets,
+                         hashes and downloads require an account/API key.
   ✘  LinuxTracker     — site alive but redesigned; the 2017 plugin finds
-                         nothing on it.
+                         nothing on it. Replaced by the October 29 plugin above.
   ✘  EZTV (eztvx, DrPurp v3.20) — the same OMDb-key problem as above; its
                          search page is now Cloudflare-challenged too, as are
                          the eztv.re / .wf / .tf / .yt mirrors. Replaced by
@@ -256,7 +288,8 @@ little or nothing, and that is the site, not the plugin.
   ✘  DODI Repacks     — DEAD: fully behind Cloudflare; hydralinks.cloud 403
   ✘  SolidTorrents    — DEAD: solidtorrents.to no longer resolves
   ✘  TorrentProject   — DEAD: site returns no content
-  ✘  Tokyo Toshokan   — BROKEN: incompatible with qBittorrent 4.6+
+  ✘  Tokyo Toshokan   — old tokyotoshokan.py incompatible with qBittorrent
+                         4.6+; replaced by tokyotosho.py RSS search above.
 """
 
 import argparse
@@ -390,12 +423,18 @@ LOCAL_PLUGINS = [
     SCRIPT_DIR / "qbt_plugins" / "fitgirl_repacks.py",  # WP REST API (hydralinks.cloud is Cloudflare-walled)
     SCRIPT_DIR / "qbt_plugins" / "therarbg.py",  # PATCHED: site layout change, bounded paging
     SCRIPT_DIR / "qbt_plugins" / "audiobookbay.py",  # PATCHED: live mirror, timeouts, bounded paging
-    SCRIPT_DIR / "qbt_plugins" / "leetx.py",  # CUSTOM: 1337x via a mirror without the Cloudflare challenge
+    SCRIPT_DIR / "qbt_plugins" / "leetx.py",  # CUSTOM: direct 1337x with source-filtered Knaben fallback
     SCRIPT_DIR / "qbt_plugins" / "knaben.py",  # CUSTOM: Knaben's JSON API (many sites at once)
     SCRIPT_DIR / "qbt_plugins" / "animetosho.py",  # PATCHED: feed moved to animetosho.net
     SCRIPT_DIR / "qbt_plugins" / "nekobt.py",  # PATCHED: no stray text rows, uses helpers
     SCRIPT_DIR / "qbt_plugins" / "eztv_api.py",  # CUSTOM: EZTV's JSON API (its search page is Cloudflare-walled)
     SCRIPT_DIR / "qbt_plugins" / "sukebei.py",  # CUSTOM: Nyaa's adult sister site
+    SCRIPT_DIR / "qbt_plugins" / "internetarchive.py",  # CUSTOM: Archive search API, torrent-bearing items
+    SCRIPT_DIR / "qbt_plugins" / "linuxtracker.py",  # CUSTOM: redesigned public search, bounded paging
+    SCRIPT_DIR / "qbt_plugins" / "tokyotosho.py",  # CUSTOM: working RSS search, replaces broken HTML scraper
+    SCRIPT_DIR / "qbt_plugins" / "publicdomaintorrents.py",  # CUSTOM: classic-film catalogue
+    SCRIPT_DIR / "qbt_plugins" / "fosstorrents.py",  # CUSTOM: published torrent catalogue and project categories
+    SCRIPT_DIR / "qbt_plugins" / "tsukihime.py",  # CUSTOM: English-tagged API results, no per-release requests
 ]
 
 # Not a search engine, so kept out of LOCAL_PLUGINS and every engine count:

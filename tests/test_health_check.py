@@ -64,3 +64,20 @@ def test_engines_follow_install_record(tmp_path):
     (engines / "qbt-plugin-installer.json").write_text(
         json.dumps({"version": "1.3.0", "plugins": ["piratebay.py", "yts.py", "gone.py"]}))
     assert hc.engines_in(tmp_path) == ["piratebay", "yts"]
+
+
+def test_retry_uses_final_status_not_stale_failure(monkeypatch, tmp_path):
+    engines = tmp_path / "engines"
+    engines.mkdir()
+    (engines / "piratebay.py").write_text("x")
+    (engines / "qbt-plugin-installer.json").write_text(json.dumps({"plugins": ["piratebay.py"]}))
+
+    attempts = iter([
+        dict(engine="piratebay", query="ubuntu", status="EMPTY", rows=0, seconds=1.0, detail=""),
+        dict(engine="piratebay", query="ubuntu", status="ERROR", rows=0, seconds=2.0, detail="traceback"),
+    ])
+    monkeypatch.setattr(hc, "search", lambda nova3, engine: next(attempts))
+
+    results = hc.check_engines(tmp_path, retry_delay=0)
+    assert results[0]["status"] == "ERROR"
+    assert results[0]["detail"] == "traceback"
