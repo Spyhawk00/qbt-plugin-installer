@@ -20,6 +20,13 @@ To release: merge the "release PR" release-please keeps open. That tags
 Versions before 1.2.0 were not numbered when they shipped; 1.0.0 and 1.1.0
 are assigned after the fact so the history reads in order.
 
+## [1.4.1](https://github.com/Spyhawk00/qbt-plugin-installer/compare/v1.4.0...v1.4.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* limetorrents froze searches when the site stalled a page request ([0c9693e](https://github.com/Spyhawk00/qbt-plugin-installer/commit/0c9693e949d9435132bb224f344b1bcb862bf125))
+
 ## [1.4.0](https://github.com/Spyhawk00/qbt-plugin-installer/compare/v1.3.0...v1.4.0) (2026-10-30)
 
 
