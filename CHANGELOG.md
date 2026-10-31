@@ -20,6 +20,18 @@ To release: merge the "release PR" release-please keeps open. That tags
 Versions before 1.2.0 were not numbered when they shipped; 1.0.0 and 1.1.0
 are assigned after the fact so the history reads in order.
 
+## [1.4.2](https://github.com/Spyhawk00/qbt-plugin-installer/compare/v1.4.1...v1.4.2) (2026-10-31)
+
+
+### Features
+
+* remove leftover official yts_am, yts_mx and thepiratebay engines ([92c971d](https://github.com/Spyhawk00/qbt-plugin-installer/commit/92c971db86cdcc548ba76be7e04a9351d9e7684f))
+
+
+### Miscellaneous Chores
+
+* release as 1.4.2 ([52d7a91](https://github.com/Spyhawk00/qbt-plugin-installer/commit/52d7a916349a4617a29bdd388449427361d82dcb))
+
 ## [1.4.1](https://github.com/Spyhawk00/qbt-plugin-installer/compare/v1.4.0...v1.4.1) (2026-10-30)
 
 
