@@ -197,6 +197,13 @@ little or nothing, and that is the site, not the plugin.
                          a Russian tracker with Russian-language releases,
                          and this installer ships English sites only.
                          Re-running the installer deletes an installed copy.
+  ✘  yts_am, yts_mx, thepiratebay — official plugins qBittorrent itself put in
+                         the engines folder, not ours. yts_am (yts.am is
+                         gone) and yts_mx (Gateway Timeout / non-JSON) failed
+                         and logged errors on every search; thepiratebay
+                         duplicates our piratebay. Re-running the installer
+                         deletes them (qBittorrent's "Check for updates" may
+                         bring them back).
   ✘  TorrentGalaxy    — REMOVED Oct 2026 as too slow: ~87 s per search
                          (1249 rows for "batman"), the slowest engine by far,
                          and it holds the Search tab open the whole time. It
@@ -466,6 +473,9 @@ RETIRED_PLUGINS = [
     "eztv.py",  # official HTML scraper: eztvx.to is Cloudflare-challenged
     "tokyotoshokan.py",
     "rutor.py",  # works, but Russian-language: the installer ships English sites only
+    "yts_am.py",  # official, from qBittorrent: yts.am is gone, errors on every search
+    "yts_mx.py",  # official, from qBittorrent: times out / answers non-JSON
+    "thepiratebay.py",  # official duplicate of our piratebay.py
 ]
 
 

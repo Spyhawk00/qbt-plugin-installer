@@ -358,3 +358,11 @@ def test_tee_and_save_log(tmp_path):
     path = core.save_log(tmp_path, "".join(tee.parts))
     assert path.read_text(encoding="utf-8").endswith("hello\n")
     assert core._Tee(None).write("abc") == 3  # windowed .exe: no stdout at all
+
+
+def test_leftover_official_engines_are_retired(tmp_path):
+    for name in ("yts_am.py", "yts_mx.py", "thepiratebay.py", "thepiratebay.ico", "mine.py"):
+        (tmp_path / name).write_text("x")
+    assert sorted(core.remove_retired(tmp_path, dry_run=False)) == [
+        "thepiratebay.py", "yts_am.py", "yts_mx.py"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["mine.py"]
